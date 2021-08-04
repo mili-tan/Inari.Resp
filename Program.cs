@@ -25,6 +25,7 @@ namespace Inari.Resp
             Console.WriteLine("File:" + args.FirstOrDefault());
             Console.WriteLine("File.Exists:" + File.Exists(args.FirstOrDefault()));
 
+            var consoleColor = Console.ForegroundColor;
             var respName = args.FirstOrDefault() + @"\resp.json";
             var fileName = Path.GetFileName(args.FirstOrDefault());
             var fileExists = File.Exists(args.FirstOrDefault());
@@ -33,19 +34,26 @@ namespace Inari.Resp
 
             if (respExists)
             {
+                Console.ForegroundColor = ConsoleColor.Green;
+
                 var respJson = Json.Parse(File.ReadAllText(respName));
                 var url = respJson.AsObjectGetString("source");
                 res = respJson.AsObjectGetString("resampler");
+                if (!res.Contains('/') && !res.Contains('\\')) res = AppDomain.CurrentDomain.BaseDirectory + res;
+
                 if (!fileExists)
                 {
                     Console.WriteLine(url + fileName);
                     new WebClient().DownloadFile(url + fileName, args.FirstOrDefault());
                 }
+
+                Console.ForegroundColor = consoleColor;
             }
             else
             {
                 Console.ForegroundColor = ConsoleColor.DarkRed;
                 Console.WriteLine("The RESP.json configuration file is missing. ");
+                Console.ForegroundColor = consoleColor;
             }
 
             var info = new ProcessStartInfo
