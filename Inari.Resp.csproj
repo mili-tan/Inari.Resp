@@ -12,8 +12,4 @@
     <IncludeNativeLibrariesInSingleFile>true</IncludeNativeLibrariesInSingleFile>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Downloader" Version="2.2.8" />
-  </ItemGroup>
-
 </Project>
