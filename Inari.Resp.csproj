@@ -8,6 +8,7 @@
     <IlcOptimizationPreference>Speed</IlcOptimizationPreference>
     <IlcFoldIdenticalMethodBodies>true</IlcFoldIdenticalMethodBodies>
     <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
+    <ApplicationIcon>resp.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
