@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using Microsoft.VisualBasic;
+using MojoJson;
 
 namespace Inari.Resp
 {
@@ -19,44 +20,37 @@ namespace Inari.Resp
             }
 
             //Console.WriteLine("CommandLine:");
-            //Console.WriteLine(
-            //    Environment.CommandLine.Replace(
-            //        Process.GetCurrentProcess().MainModule.FileName + " ", ""));
             //Console.WriteLine(Interaction.Command());
 
             Console.WriteLine("File:" + args.FirstOrDefault());
             Console.WriteLine("File.Exists:" + File.Exists(args.FirstOrDefault()));
 
-            if (!File.Exists(args.FirstOrDefault()))
+            var respName = args.FirstOrDefault() + @"\resp.json";
+            var fileName = Path.GetFileName(args.FirstOrDefault());
+            var fileExists = File.Exists(args.FirstOrDefault());
+            var respExists = File.Exists(respName);
+            var res = AppDomain.CurrentDomain.BaseDirectory + "resampler.exe";
+
+            if (respExists)
             {
-                var fileName = Path.GetFileName(args.FirstOrDefault());
-                var url = "https://mili-01.coding.net/p/resp-repo/d/Haiamesen-JPNVCV-1.0/git/raw/master/";
-
-                //var downloader = new DownloadService(new DownloadConfiguration()
-                //{
-                //    BufferBlockSize = 10240,
-                //    ChunkCount = 8,
-                //    MaxTryAgainOnFailover = 3,
-                //    ParallelDownload = true,
-                //    Timeout = 1000,
-                //    RequestConfiguration =
-                //    {
-                //        Accept = "*/*",
-                //        AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
-                //        ProtocolVersion = HttpVersion.Version11,
-                //        UserAgent = "INARI.Resp/0.1"
-                //    }
-                //});
-                //downloader.DownloadFileTaskAsync(url + fileName, args.FirstOrDefault()).Wait();
-
-                Console.WriteLine(url + fileName);
-                new WebClient().DownloadFile(url + fileName, args.FirstOrDefault());
-
+                var respJson = Json.Parse(File.ReadAllText(respName));
+                var url = respJson.AsObjectGetString("source");
+                res = respJson.AsObjectGetString("resampler");
+                if (!fileExists)
+                {
+                    Console.WriteLine(url + fileName);
+                    new WebClient().DownloadFile(url + fileName, args.FirstOrDefault());
+                }
+            }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.DarkRed;
+                Console.WriteLine("The RESP.json configuration file is missing. ");
             }
 
             var info = new ProcessStartInfo
             {
-                FileName = @"E:\UTAU\tips.exe",
+                FileName = res,
                 Arguments = Interaction.Command(),
                 RedirectStandardOutput = true,
                 CreateNoWindow = false,
