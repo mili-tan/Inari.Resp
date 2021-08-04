@@ -22,21 +22,22 @@ namespace Inari.Resp
             //Console.WriteLine("CommandLine:");
             //Console.WriteLine(Interaction.Command());
 
+            Console.WriteLine("------------Inari.Resp v0.1-------------");
             Console.WriteLine("File:" + args.FirstOrDefault());
             Console.WriteLine("File.Exists:" + File.Exists(args.FirstOrDefault()));
 
             var consoleColor = Console.ForegroundColor;
-            var respName = args.FirstOrDefault() + @"\resp.json";
+            var respPath =Path.GetDirectoryName(args.FirstOrDefault()) + @"\resp.json";
             var fileName = Path.GetFileName(args.FirstOrDefault());
             var fileExists = File.Exists(args.FirstOrDefault());
-            var respExists = File.Exists(respName);
+            var respExists = File.Exists(respPath);
             var res = AppDomain.CurrentDomain.BaseDirectory + "resampler.exe";
 
             if (respExists)
             {
                 Console.ForegroundColor = ConsoleColor.Green;
 
-                var respJson = Json.Parse(File.ReadAllText(respName));
+                var respJson = Json.Parse(File.ReadAllText(respPath));
                 var url = respJson.AsObjectGetString("source");
                 res = respJson.AsObjectGetString("resampler");
                 if (!res.Contains('/') && !res.Contains('\\')) res = AppDomain.CurrentDomain.BaseDirectory + res;
