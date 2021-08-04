@@ -2,6 +2,8 @@
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net;
+using Downloader;
 using Microsoft.VisualBasic;
 
 namespace Inari.Resp
@@ -17,14 +19,37 @@ namespace Inari.Resp
                 return;
             }
 
-            Console.WriteLine("----------CommandLine----------");
-            Console.WriteLine(
-                Environment.CommandLine.Replace(
-                    Process.GetCurrentProcess().MainModule.FileName + " ", ""));
-            Console.WriteLine(Interaction.Command());
-            Console.WriteLine("----------File----------");
-            Console.WriteLine(args.FirstOrDefault());
-            Console.WriteLine(File.Exists(args.FirstOrDefault()));
+            //Console.WriteLine("----------CommandLine----------");
+            //Console.WriteLine(
+            //    Environment.CommandLine.Replace(
+            //        Process.GetCurrentProcess().MainModule.FileName + " ", ""));
+            //Console.WriteLine(Interaction.Command());
+
+            Console.WriteLine("File:" + args.FirstOrDefault());
+            Console.WriteLine("File.Exists:" + File.Exists(args.FirstOrDefault()));
+
+            if (!File.Exists(args.FirstOrDefault()))
+            {
+                var fileName = Path.GetFileName(args.FirstOrDefault());
+                var url = "";
+                var downloader = new DownloadService(new DownloadConfiguration()
+                {
+                    BufferBlockSize = 10240,
+                    ChunkCount = 8,
+                    MaxTryAgainOnFailover = 3,
+                    ParallelDownload = true,
+                    TempDirectory = "C:\\temp",
+                    Timeout = 1000,
+                    RequestConfiguration = 
+                    {
+                        Accept = "*/*",
+                        AutomaticDecompression = DecompressionMethods.GZip | DecompressionMethods.Deflate,
+                        ProtocolVersion = HttpVersion.Version11,
+                        UserAgent = "INARI.Resp/0.1"
+                    }
+                });
+                downloader.DownloadFileTaskAsync(url + fileName, args.FirstOrDefault()).Wait();
+            }
 
             var info = new ProcessStartInfo
             {
@@ -37,7 +62,7 @@ namespace Inari.Resp
             var p = new Process {StartInfo = info, EnableRaisingEvents = true};
             p.Start();
             p.WaitForExit();
-            Console.WriteLine("----------Resampler----------");
+            Console.WriteLine("Resampler:");
             Console.WriteLine(p.StandardOutput.ReadToEnd());
         }
     }
