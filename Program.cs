@@ -71,6 +71,7 @@ namespace Inari.Resp
                     Console.ForegroundColor = ConsoleColor.DarkYellow;
                     Console.WriteLine("Outdated:" + fileName);
                     File.Delete(args.FirstOrDefault());
+                    fileExists = false;
                 }
 
                 if (!fileExists)
