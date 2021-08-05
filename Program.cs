@@ -5,9 +5,9 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Security.Cryptography;
-using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.VisualBasic;
+using Newtonsoft.Json;
 
 namespace Inari.Resp
 {
@@ -29,7 +29,7 @@ namespace Inari.Resp
                     Console.WriteLine(hash + ":" + item.Name);
                     hashs.Add(item.Name, hash);
                 });
-                File.WriteAllText(dir.FullName + @"/resp.hash", JsonSerializer.Serialize(hashs));
+                File.WriteAllText(dir.FullName + @"/resp.hash", JsonConvert.SerializeObject(hashs));
                 return;
             }
 
@@ -51,7 +51,7 @@ namespace Inari.Resp
 
             if (respExists)
             {
-                var respDict = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(respPath));
+                var respDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(respPath));
                 var url = respDict["source"];
                 res = respDict["resampler"];
                 if (!res.Contains('/') && !res.Contains('\\')) res = AppDomain.CurrentDomain.BaseDirectory + res;
@@ -64,7 +64,7 @@ namespace Inari.Resp
                     new WebClient().DownloadFile(url + "resp.hash", hashPath);
                 }
 
-                var hashDict = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(hashPath));
+                var hashDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(hashPath));
                 if (fileExists && hashDict.TryGetValue(fileName, out string fileHash) && fileHash != Convert.ToBase64String(
                     new SHA1CryptoServiceProvider().ComputeHash(File.ReadAllBytes(args.FirstOrDefault()))))
                 {
