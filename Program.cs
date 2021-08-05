@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -19,13 +20,16 @@ namespace Inari.Resp
                 Console.WriteLine("Welcome to Inari.Resp");
                 Console.WriteLine("Drop the folder and press enter to generate hash");
                 var dir = new DirectoryInfo(Console.ReadLine());
+                var hashs = new List<string>();
                 Parallel.ForEach(dir.GetFiles(), item =>
                 {
                     if (item.Extension != ".wav" && item.Name != "oto.ini") return;
                     var hash = Convert.ToBase64String(
                         new SHA1CryptoServiceProvider().ComputeHash(File.ReadAllBytes(item.FullName)));
-                    Console.WriteLine(hash + " : " + item.Name);
+                    Console.WriteLine(hash + ":" + item.Name);
+                    hashs.Add(item.Name + ":" + hash);
                 });
+                File.WriteAllLines(dir.FullName + @"/resp.hash", hashs);
                 return;
             }
 
@@ -57,6 +61,7 @@ namespace Inari.Resp
                     Console.WriteLine(url + fileName);
                     new WebClient().DownloadFile(url + fileName, args.FirstOrDefault());
                 }
+
 
                 Console.ForegroundColor = consoleColor;
             }
