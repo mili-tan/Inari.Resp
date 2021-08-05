@@ -9,6 +9,7 @@
     <IlcFoldIdenticalMethodBodies>true</IlcFoldIdenticalMethodBodies>
     <EnableUnsafeBinaryFormatterSerialization>true</EnableUnsafeBinaryFormatterSerialization>
     <ApplicationIcon>resp.ico</ApplicationIcon>
+    <AssemblyName>Resp</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

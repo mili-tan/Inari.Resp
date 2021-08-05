@@ -4,12 +4,10 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Runtime.Serialization.Formatters.Binary;
 using System.Security.Cryptography;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.VisualBasic;
-using MojoJson;
 
 namespace Inari.Resp
 {
@@ -53,9 +51,9 @@ namespace Inari.Resp
 
             if (respExists)
             {
-                var respJson = Json.Parse(File.ReadAllText(respPath));
-                var url = respJson.AsObjectGetString("source");
-                res = respJson.AsObjectGetString("resampler");
+                var respDict = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(respPath));
+                var url = respDict["source"];
+                res = respDict["resampler"];
                 if (!res.Contains('/') && !res.Contains('\\')) res = AppDomain.CurrentDomain.BaseDirectory + res;
 
                 if (!hashExists ||
@@ -66,8 +64,8 @@ namespace Inari.Resp
                     new WebClient().DownloadFile(url + "resp.hash", hashPath);
                 }
 
-                var hash = JsonSerializer.Deserialize<Dictionary<string, string>>(hashPath);
-                if (fileExists && hash.TryGetValue(fileName, out string fileHash) && fileHash != Convert.ToBase64String(
+                var hashDict = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(hashPath));
+                if (fileExists && hashDict.TryGetValue(fileName, out string fileHash) && fileHash != Convert.ToBase64String(
                     new SHA1CryptoServiceProvider().ComputeHash(File.ReadAllBytes(args.FirstOrDefault()))))
                 {
                     Console.ForegroundColor = ConsoleColor.DarkYellow;
