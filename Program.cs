@@ -3,6 +3,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography;
+using System.Threading.Tasks;
 using Microsoft.VisualBasic;
 using MojoJson;
 
@@ -15,7 +17,15 @@ namespace Inari.Resp
             if (args.Length == 0)
             {
                 Console.WriteLine("Welcome to Inari.Resp");
-                Console.ReadKey();
+                Console.WriteLine("Drop the folder and press enter to generate hash");
+                var dir = new DirectoryInfo(Console.ReadLine());
+                Parallel.ForEach(dir.GetFiles(), item =>
+                {
+                    if (item.Extension != ".wav" && item.Name != "oto.ini") return;
+                    var hash = Convert.ToBase64String(
+                        new SHA1CryptoServiceProvider().ComputeHash(File.ReadAllBytes(item.FullName)));
+                    Console.WriteLine(hash + " : " + item.Name);
+                });
                 return;
             }
 
