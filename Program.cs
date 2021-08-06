@@ -66,10 +66,19 @@ namespace Inari.Resp
 
             var res = AppDomain.CurrentDomain.BaseDirectory + "resampler.exe";
 
-            Console.WriteLine("File:" + fileInfo.FullName);
-            Console.WriteLine("File.Exists:" + fileExists);
-            Console.WriteLine("VoiceName:" + voiceName);
-            Console.WriteLine("VoicePath:" + voicePath);
+            if (!fileInfo.Directory.FullName.Contains(@"\voice\"))
+            {
+                Console.ForegroundColor = ConsoleColor.DarkRed;
+                Console.WriteLine("This is not valid UTAU Voice path.");
+            }
+            else
+            {
+                Console.WriteLine("File:" + fileInfo.FullName);
+                Console.WriteLine("File.Exists:" + fileExists);
+                Console.WriteLine("VoiceName:" + voiceName);
+                Console.WriteLine("VoicePath:" + voicePath);
+            }
+
             Console.WriteLine();
 
             if (!fileInfo.Directory.Exists) fileInfo.Directory.Create();
