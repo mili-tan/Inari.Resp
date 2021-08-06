@@ -79,8 +79,8 @@ namespace Inari.Resp
                 var respDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(respPath));
                 var url = respDict["source"];
                 res = respDict["resampler"];
-                if (!res.Contains('/') && !res.Contains('\\')) res = AppDomain.CurrentDomain.BaseDirectory + res;
 
+                if (!res.Contains('/') && !res.Contains('\\')) res = AppDomain.CurrentDomain.BaseDirectory + res;
                 if (!hashExists ||
                     (DateTime.UtcNow - new FileInfo(hashPath).LastWriteTimeUtc).TotalHours > 24)
                 {
@@ -94,16 +94,17 @@ namespace Inari.Resp
                     {
                         Console.ForegroundColor = ConsoleColor.DarkRed;
                         Console.WriteLine(e);
+                        if (File.Exists(hashPath)) File.Delete(hashPath);
                     }
                 }
 
                 var hashDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(hashPath));
                 if (fileExists && hashDict.TryGetValue(fileName, out string fileHash) && fileHash != Convert.ToBase64String(
-                    new SHA1CryptoServiceProvider().ComputeHash(File.ReadAllBytes(args.FirstOrDefault()))))
+                    new SHA1CryptoServiceProvider().ComputeHash(File.ReadAllBytes(fileInfo.FullName))))
                 {
                     Console.ForegroundColor = ConsoleColor.DarkYellow;
                     Console.WriteLine("Outdated:" + fileName);
-                    File.Delete(args.FirstOrDefault());
+                    File.Delete(fileInfo.FullName);
                     fileExists = false;
                 }
 
@@ -113,12 +114,13 @@ namespace Inari.Resp
                     Console.WriteLine(url + fileName);
                     try
                     {
-                        new WebClient().DownloadFileTaskAsync(url + fileName, args.FirstOrDefault()).Wait(5000);
+                        new WebClient().DownloadFileTaskAsync(url + fileName, fileInfo.FullName).Wait(5000);
                     }
                     catch (Exception e)
                     {
                         Console.ForegroundColor = ConsoleColor.DarkRed;
                         Console.WriteLine(e);
+                        if (File.Exists(fileInfo.FullName)) File.Delete(fileInfo.FullName);
                     }
                 }
 
