@@ -65,6 +65,8 @@ namespace Inari.Resp
             Console.WriteLine("File.Exists:" + fileExists);
             Console.WriteLine();
 
+            if (!fileInfo.Directory.Exists) fileInfo.Directory.Create();
+
             if (respExists)
             {
                 var respDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(respPath));
