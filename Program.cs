@@ -66,7 +66,7 @@ namespace Inari.Resp
 
             var res = AppDomain.CurrentDomain.BaseDirectory + "resampler.exe";
 
-            Console.WriteLine("File:" + fileName);
+            Console.WriteLine("File:" + fileInfo.FullName);
             Console.WriteLine("File.Exists:" + fileExists);
             Console.WriteLine("VoiceName:" + voiceName);
             Console.WriteLine("VoicePath:" + voicePath);
