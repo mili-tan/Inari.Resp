@@ -50,19 +50,27 @@ namespace Inari.Resp
 
             Console.WriteLine("------------Inari.Resp v0.1-------------");
 
-            var consoleColor = Console.ForegroundColor;
             var fileInfo = new FileInfo(args.FirstOrDefault());
-            var dirName = fileInfo.Directory.Name;
-            var respPath = fileInfo.DirectoryName + @"\resp.json";
-            var hashPath = fileInfo.DirectoryName + @"\resp.hash";
-            var fileName = fileInfo.FullName.Split(dirName).Last().TrimStart('\\');
-            var fileExists = fileInfo.Exists;
+
+            var consoleColor = Console.ForegroundColor;
+            var voiceName = fileInfo.FullName.Split("voice").Last().TrimStart('\\').Split('\\').First();
+            var voicePath = fileInfo.FullName.Split(voiceName).First() + voiceName;
+            
+            var respPath = voicePath + @"\resp.json";
+            var hashPath = voicePath + @"\resp.hash";
             var respExists = File.Exists(respPath);
             var hashExists = File.Exists(hashPath);
+
+            var dirName = fileInfo.Directory.Name;
+            var fileName = fileInfo.FullName.Split(voiceName).Last().TrimStart('\\');
+            var fileExists = fileInfo.Exists;
+
             var res = AppDomain.CurrentDomain.BaseDirectory + "resampler.exe";
 
-            Console.WriteLine("File:" + fileInfo.FullName.Split(dirName).Last());
+            Console.WriteLine("File:" + fileName);
             Console.WriteLine("File.Exists:" + fileExists);
+            Console.WriteLine("VoiceName:" + voiceName);
+            Console.WriteLine("VoicePath:" + voicePath);
             Console.WriteLine();
 
             if (!fileInfo.Directory.Exists) fileInfo.Directory.Create();
