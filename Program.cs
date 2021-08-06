@@ -49,17 +49,21 @@ namespace Inari.Resp
             //Console.WriteLine(Interaction.Command());
 
             Console.WriteLine("------------Inari.Resp v0.1-------------");
-            Console.WriteLine("File:" + args.FirstOrDefault());
-            Console.WriteLine("File.Exists:" + File.Exists(args.FirstOrDefault()));
 
             var consoleColor = Console.ForegroundColor;
-            var respPath =Path.GetDirectoryName(args.FirstOrDefault()) + @"\resp.json";
-            var hashPath = Path.GetDirectoryName(args.FirstOrDefault()) + @"\resp.hash";
-            var fileName = Path.GetFileName(args.FirstOrDefault());
-            var fileExists = File.Exists(args.FirstOrDefault());
+            var fileInfo = new FileInfo(args.FirstOrDefault());
+            var dirName = fileInfo.Directory.Name;
+            var respPath = fileInfo.DirectoryName + @"\resp.json";
+            var hashPath = fileInfo.DirectoryName + @"\resp.hash";
+            var fileName = fileInfo.FullName.Split(dirName).Last().TrimStart('\\');
+            var fileExists = fileInfo.Exists;
             var respExists = File.Exists(respPath);
             var hashExists = File.Exists(hashPath);
             var res = AppDomain.CurrentDomain.BaseDirectory + "resampler.exe";
+
+            Console.WriteLine("File:" + fileInfo.FullName.Split(dirName).Last());
+            Console.WriteLine("File.Exists:" + fileExists);
+            Console.WriteLine();
 
             if (respExists)
             {
@@ -73,7 +77,15 @@ namespace Inari.Resp
                 {
                     Console.ForegroundColor = ConsoleColor.Cyan;
                     Console.WriteLine("Sync:resp.hash");
-                    new WebClient().DownloadFile(url + "resp.hash", hashPath);
+                    try
+                    {
+                        new WebClient().DownloadFileTaskAsync(url + "resp.hash", hashPath).Wait(3000);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.ForegroundColor = ConsoleColor.DarkRed;
+                        Console.WriteLine(e);
+                    }
                 }
 
                 var hashDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(hashPath));
@@ -90,7 +102,15 @@ namespace Inari.Resp
                 {
                     Console.ForegroundColor = ConsoleColor.Green;
                     Console.WriteLine(url + fileName);
-                    new WebClient().DownloadFile(url + fileName, args.FirstOrDefault());
+                    try
+                    {
+                        new WebClient().DownloadFileTaskAsync(url + fileName, args.FirstOrDefault()).Wait(5000);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.ForegroundColor = ConsoleColor.DarkRed;
+                        Console.WriteLine(e);
+                    }
                 }
 
                 Console.ForegroundColor = consoleColor;
