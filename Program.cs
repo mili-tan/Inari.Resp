@@ -29,7 +29,19 @@ namespace Inari.Resp
                     Console.WriteLine(hash + ":" + item.Name);
                     hashs.Add(item.Name, hash);
                 });
-                File.WriteAllText(dir.FullName + @"/resp.hash", JsonConvert.SerializeObject(hashs));
+                Parallel.ForEach(dir.GetDirectories(), subDirs =>
+                {
+                    Parallel.ForEach(subDirs.GetFiles(), item =>
+                    {
+                        if (item.Extension != ".wav" && item.Name != "oto.ini") return;
+                        var hash = Convert.ToBase64String(
+                            new SHA1CryptoServiceProvider().ComputeHash(File.ReadAllBytes(item.FullName)));
+                        Console.WriteLine(hash + ":" + item.FullName.Replace(dir.FullName,"").TrimStart('/'));
+                        hashs.Add(item.FullName.Replace(dir.FullName, "").TrimStart('/'), hash);
+                    });
+                });
+                File.WriteAllText(dir.FullName + @"/resp.hash",
+                    JsonConvert.SerializeObject(hashs, Formatting.Indented));
                 return;
             }
 
