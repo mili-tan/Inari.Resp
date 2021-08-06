@@ -36,8 +36,8 @@ namespace Inari.Resp
                         if (item.Extension != ".wav" && item.Name != "oto.ini") return;
                         var hash = Convert.ToBase64String(
                             new SHA1CryptoServiceProvider().ComputeHash(File.ReadAllBytes(item.FullName)));
-                        Console.WriteLine(hash + ":" + item.FullName.Replace(dir.FullName,"").TrimStart('/'));
-                        hashs.Add(item.FullName.Replace(dir.FullName, "").TrimStart('/'), hash);
+                        Console.WriteLine(hash + ":" + item.FullName.Split(dir.Name).Last().TrimStart('\\'));
+                        hashs.Add(item.FullName.Split(dir.Name).Last().TrimStart('\\'), hash);
                     });
                 });
                 File.WriteAllText(dir.FullName + @"/resp.hash",
