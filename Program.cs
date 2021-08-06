@@ -61,7 +61,6 @@ namespace Inari.Resp
             var respExists = File.Exists(respPath);
             var hashExists = File.Exists(hashPath);
 
-            var dirName = fileInfo.Directory.Name;
             var fileName = fileInfo.FullName.Split(voiceName).Last().TrimStart('\\');
             var fileExists = fileInfo.Exists;
 
