@@ -27,11 +27,30 @@ namespace Inari.Resp
             Console.WriteLine("------------Inari.Resp v0.1-------------");
 
             var fileInfo = new FileInfo(args.FirstOrDefault());
-
             var consoleColor = Console.ForegroundColor;
-            var voiceName = fileInfo.FullName.Split("voice").Last().TrimStart('\\').Split('\\').First();
-            var voicePath = fileInfo.FullName.Split(voiceName).First() + voiceName;
-            var utauPath = fileInfo.FullName.Split("voice").First();
+            var voiceName = fileInfo.Directory.Name;
+            var voicePath = fileInfo.Directory.FullName;
+            var utauPath = AppDomain.CurrentDomain.BaseDirectory;
+            try
+            {
+                if (!File.Exists(AppDomain.CurrentDomain.BaseDirectory + "utau.exe"))
+                {
+                    utauPath = File.Exists(fileInfo.Directory.Parent.Parent.Parent.FullName + @"\utau.exe")
+                        ? fileInfo.Directory.Parent.Parent.Parent.FullName
+                        : fileInfo.Directory.Parent.Parent.FullName;
+                }
+
+                if (!File.Exists(fileInfo.Directory.FullName + @"\resp.json") &&
+                    File.Exists(fileInfo.Directory.Parent.FullName + @"\resp.json"))
+                {
+                    voiceName = fileInfo.Directory.Parent.Name;
+                    voicePath = fileInfo.Directory.Parent.FullName;
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+            }
 
             var respPath = voicePath + @"\resp.json";
             var hashPath = voicePath + @"\resp.hash";
@@ -43,7 +62,7 @@ namespace Inari.Resp
 
             var res = AppDomain.CurrentDomain.BaseDirectory + "resampler.exe";
 
-            if (!fileInfo.Directory.FullName.Contains(@"\voice\"))
+            if (!respExists && !fileInfo.Directory.FullName.Contains(@"\voice\"))
             {
                 Console.ForegroundColor = ConsoleColor.DarkRed;
                 Console.WriteLine("This is not valid UTAU Voice path.");
@@ -54,6 +73,7 @@ namespace Inari.Resp
                 Console.WriteLine("File.Exists:" + fileExists);
                 Console.WriteLine("VoiceName:" + voiceName);
                 Console.WriteLine("VoicePath:" + voicePath);
+                Console.WriteLine("UTAUPath:" + utauPath);
             }
 
             if (!fileInfo.Directory.Exists) fileInfo.Directory.Create();
@@ -76,7 +96,7 @@ namespace Inari.Resp
                     if (!File.Exists(res))
                     {
                         Console.WriteLine("Resampler Not found:" + res);
-                        res = fileInfo.FullName.Split("voice").First() + @"\resampler.exe";
+                        res = fileInfo.Directory.FullName.Split("voice").First() + @"\resampler.exe";
                     }
                     if (!File.Exists(res)) Console.WriteLine("Resampler Not found:" + res);
                 }
