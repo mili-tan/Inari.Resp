@@ -21,10 +21,9 @@ namespace Inari.Resp
                 return;
             }
 
-            //Console.WriteLine("CommandLine:");
-            //Console.WriteLine(Interaction.Command());
+            //Console.WriteLine("CommandLine:" + Interaction.Command());
 
-            Console.WriteLine("------------Inari.Resp v0.1-------------");
+            Console.WriteLine("------------INARI.RESP v0.12------------");
 
             var fileInfo = new FileInfo(args.FirstOrDefault());
             var consoleColor = Console.ForegroundColor;
@@ -69,9 +68,9 @@ namespace Inari.Resp
             }
             else
             {
-                Console.WriteLine("File:" + fileInfo.FullName);
-                Console.WriteLine("File.Exists:" + fileExists);
                 Console.WriteLine("VoiceName:" + voiceName);
+                Console.WriteLine("File:" + fileInfo.FullName);
+                Console.WriteLine("Exists:" + fileExists);
             }
 
             if (!fileInfo.Directory.Exists) fileInfo.Directory.Create();
@@ -89,21 +88,21 @@ namespace Inari.Resp
                 if (!File.Exists(res))
                 {
                     Console.ForegroundColor = ConsoleColor.DarkYellow;
-                    Console.WriteLine("Resampler Not found:" + res);
+                    Console.WriteLine("Resampler NotFound:" + res);
                     res = AppDomain.CurrentDomain.BaseDirectory + "resampler.exe";
                     if (!File.Exists(res))
                     {
-                        Console.WriteLine("Resampler Not found:" + res);
+                        Console.WriteLine("Resampler NotFound:" + res);
                         res = fileInfo.Directory.FullName.Split("voice").First() + @"\resampler.exe";
                     }
-                    if (!File.Exists(res)) Console.WriteLine("Resampler Not found:" + res);
+                    if (!File.Exists(res)) Console.WriteLine("Resampler NotFound:" + res);
                 }
 
                 if (!hashExists ||
                     (DateTime.UtcNow - new FileInfo(hashPath).LastWriteTimeUtc).TotalHours > 24)
                 {
                     Console.ForegroundColor = ConsoleColor.Cyan;
-                    Console.WriteLine("Sync:resp.hash");
+                    Console.WriteLine("Sync:RESP.hash");
                     try
                     {
                         new WebClient().DownloadFileTaskAsync(url + "resp.hash", hashPath).Wait(3000);
@@ -121,7 +120,7 @@ namespace Inari.Resp
                     new SHA1CryptoServiceProvider().ComputeHash(File.ReadAllBytes(fileInfo.FullName))))
                 {
                     Console.ForegroundColor = ConsoleColor.DarkYellow;
-                    Console.WriteLine("Outdated:" + fileName);
+                    Console.WriteLine("Outdated:" + fileName + " | Newer:" + fileHash);
                     File.Delete(fileInfo.FullName);
                     fileExists = false;
                 }
