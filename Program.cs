@@ -72,8 +72,6 @@ namespace Inari.Resp
                 Console.WriteLine("File:" + fileInfo.FullName);
                 Console.WriteLine("File.Exists:" + fileExists);
                 Console.WriteLine("VoiceName:" + voiceName);
-                Console.WriteLine("VoicePath:" + voicePath);
-                Console.WriteLine("UTAUPath:" + utauPath);
             }
 
             if (!fileInfo.Directory.Exists) fileInfo.Directory.Create();
