@@ -90,6 +90,18 @@ namespace Inari.Resp
                 res = respDict["resampler"];
 
                 if (!res.Contains('/') && !res.Contains('\\')) res = AppDomain.CurrentDomain.BaseDirectory + res;
+                if (!File.Exists(res))
+                {
+                    Console.ForegroundColor = ConsoleColor.DarkYellow;
+                    Console.WriteLine("Can't find resampler:" + res);
+                    res = AppDomain.CurrentDomain.BaseDirectory + "resampler.exe";
+                    if (!File.Exists(res))
+                    {
+                        Console.WriteLine("Can't find resampler:" + res);
+                        res = fileInfo.FullName.Split("voice").First() + @"\resampler.exe";
+                    }
+                }
+
                 if (!hashExists ||
                     (DateTime.UtcNow - new FileInfo(hashPath).LastWriteTimeUtc).TotalHours > 24)
                 {
@@ -132,16 +144,14 @@ namespace Inari.Resp
                         if (File.Exists(fileInfo.FullName)) File.Delete(fileInfo.FullName);
                     }
                 }
-
-                Console.ForegroundColor = consoleColor;
             }
             else
             {
                 Console.ForegroundColor = ConsoleColor.DarkRed;
                 Console.WriteLine("The RESP.json configuration file is missing. ");
-                Console.ForegroundColor = consoleColor;
             }
 
+            Console.ForegroundColor = consoleColor;
             var info = new ProcessStartInfo
             {
                 FileName = res,
