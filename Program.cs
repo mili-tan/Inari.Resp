@@ -17,31 +17,7 @@ namespace Inari.Resp
         {
             if (args.Length == 0)
             {
-                Console.WriteLine("Welcome to Inari.Resp");
-                Console.WriteLine("Drop the folder and press enter to generate hash");
-                var dir = new DirectoryInfo(Console.ReadLine());
-                var hashs = new Dictionary<string, string>();
-                Parallel.ForEach(dir.GetFiles(), item =>
-                {
-                    if (item.Extension != ".wav" && item.Name != "oto.ini") return;
-                    var hash = Convert.ToBase64String(
-                        new SHA1CryptoServiceProvider().ComputeHash(File.ReadAllBytes(item.FullName)));
-                    Console.WriteLine(hash + ":" + item.Name);
-                    hashs.Add(item.Name, hash);
-                });
-                Parallel.ForEach(dir.GetDirectories(), subDirs =>
-                {
-                    Parallel.ForEach(subDirs.GetFiles(), item =>
-                    {
-                        if (item.Extension != ".wav" && item.Name != "oto.ini") return;
-                        var hash = Convert.ToBase64String(
-                            new SHA1CryptoServiceProvider().ComputeHash(File.ReadAllBytes(item.FullName)));
-                        Console.WriteLine(hash + ":" + item.FullName.Split(dir.Name).Last().TrimStart('\\'));
-                        hashs.Add(item.FullName.Split(dir.Name).Last().TrimStart('\\'), hash);
-                    });
-                });
-                File.WriteAllText(dir.FullName + @"/resp.hash",
-                    JsonConvert.SerializeObject(hashs, Formatting.Indented));
+                NoRes();
                 return;
             }
 
@@ -55,7 +31,8 @@ namespace Inari.Resp
             var consoleColor = Console.ForegroundColor;
             var voiceName = fileInfo.FullName.Split("voice").Last().TrimStart('\\').Split('\\').First();
             var voicePath = fileInfo.FullName.Split(voiceName).First() + voiceName;
-            
+            var utauPath = fileInfo.FullName.Split("voice").First();
+
             var respPath = voicePath + @"\resp.json";
             var hashPath = voicePath + @"\resp.hash";
             var respExists = File.Exists(respPath);
@@ -79,8 +56,6 @@ namespace Inari.Resp
                 Console.WriteLine("VoicePath:" + voicePath);
             }
 
-            Console.WriteLine();
-
             if (!fileInfo.Directory.Exists) fileInfo.Directory.Create();
 
             if (respExists)
@@ -89,17 +64,21 @@ namespace Inari.Resp
                 var url = respDict["source"];
                 res = respDict["resampler"];
 
-                if (!res.Contains('/') && !res.Contains('\\')) res = AppDomain.CurrentDomain.BaseDirectory + res;
+                if (!res.Contains('/') && !res.Contains('\\'))
+                    res = File.Exists(utauPath + '\\' + res)
+                        ? utauPath + '\\' + res
+                        : AppDomain.CurrentDomain.BaseDirectory + res;
                 if (!File.Exists(res))
                 {
                     Console.ForegroundColor = ConsoleColor.DarkYellow;
-                    Console.WriteLine("Can't find resampler:" + res);
+                    Console.WriteLine("Resampler Not found:" + res);
                     res = AppDomain.CurrentDomain.BaseDirectory + "resampler.exe";
                     if (!File.Exists(res))
                     {
-                        Console.WriteLine("Can't find resampler:" + res);
+                        Console.WriteLine("Resampler Not found:" + res);
                         res = fileInfo.FullName.Split("voice").First() + @"\resampler.exe";
                     }
+                    if (!File.Exists(res)) Console.WriteLine("Resampler Not found:" + res);
                 }
 
                 if (!hashExists ||
@@ -151,7 +130,9 @@ namespace Inari.Resp
                 Console.WriteLine("The RESP.json configuration file is missing. ");
             }
 
+            Console.WriteLine();
             Console.ForegroundColor = consoleColor;
+
             var info = new ProcessStartInfo
             {
                 FileName = res,
@@ -165,6 +146,41 @@ namespace Inari.Resp
             p.WaitForExit();
             Console.WriteLine("Resampler:");
             Console.WriteLine(p.StandardOutput.ReadToEnd());
+        }
+
+        public static void NoRes()
+        {
+            var line = string.Empty;
+            Console.WriteLine("Welcome to Inari.Resp");
+            while (string.IsNullOrEmpty(line) || !Directory.Exists(line))
+            {
+                Console.WriteLine("Drop the folder and press enter to generate hash");
+                Console.ReadLine();
+            }
+
+            var dir = new DirectoryInfo(line);
+            var hashDict = new Dictionary<string, string>();
+            Parallel.ForEach(dir.GetFiles(), item =>
+            {
+                if (item.Extension != ".wav" && item.Name != "oto.ini") return;
+                var hash = Convert.ToBase64String(
+                    new SHA1CryptoServiceProvider().ComputeHash(File.ReadAllBytes(item.FullName)));
+                Console.WriteLine(hash + ":" + item.Name);
+                hashDict.Add(item.Name, hash);
+            });
+            Parallel.ForEach(dir.GetDirectories(), subDirs =>
+            {
+                Parallel.ForEach(subDirs.GetFiles(), item =>
+                {
+                    if (item.Extension != ".wav" && item.Name != "oto.ini") return;
+                    var hash = Convert.ToBase64String(
+                        new SHA1CryptoServiceProvider().ComputeHash(File.ReadAllBytes(item.FullName)));
+                    Console.WriteLine(hash + ":" + item.FullName.Split(dir.Name).Last().TrimStart('\\'));
+                    hashDict.Add(item.FullName.Split(dir.Name).Last().TrimStart('\\'), hash);
+                });
+            });
+            File.WriteAllText(dir.FullName + @"\resp.hash",
+                JsonConvert.SerializeObject(hashDict, Formatting.Indented));
         }
     }
 }
