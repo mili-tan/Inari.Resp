@@ -22,7 +22,6 @@ namespace Inari.Resp
             }
 
             //Console.WriteLine("CommandLine:" + Interaction.Command());
-
             Console.WriteLine("------------INARI.RESP v0.12------------");
 
             var fileInfo = new FileInfo(args.FirstOrDefault());
@@ -53,29 +52,26 @@ namespace Inari.Resp
 
             var respPath = voicePath + @"\resp.json";
             var hashPath = voicePath + @"\resp.hash";
-            var respExists = File.Exists(respPath);
-            var hashExists = File.Exists(hashPath);
 
-            var fileName = fileInfo.FullName.Split(voiceName).Last().TrimStart('\\');
+            var fileName = fileInfo.FullName.Split(voiceName).Last();
             var fileExists = fileInfo.Exists;
 
             var res = AppDomain.CurrentDomain.BaseDirectory + "resampler.exe";
 
-            if (!respExists && !fileInfo.Directory.FullName.Contains(@"\voice\"))
+            if (!File.Exists(respPath) && !fileInfo.Directory.FullName.Contains(@"\voice\"))
             {
                 Console.ForegroundColor = ConsoleColor.DarkRed;
                 Console.WriteLine("This is not valid UTAU Voice path.");
             }
             else
             {
-                Console.WriteLine("VoiceName:" + voiceName);
-                Console.WriteLine("File:" + fileInfo.FullName);
-                Console.WriteLine("Exists:" + fileExists);
+                Console.WriteLine("VoiceName:" + voiceName + " | File.Exists:" + fileExists);
+                Console.WriteLine("File:" + fileInfo.FullName + " | " + fileName);
             }
 
             if (!fileInfo.Directory.Exists) fileInfo.Directory.Create();
 
-            if (respExists)
+            if (File.Exists(respPath))
             {
                 var respDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(respPath));
                 var url = respDict["source"];
@@ -98,7 +94,7 @@ namespace Inari.Resp
                     if (!File.Exists(res)) Console.WriteLine("Resampler NotFound:" + res);
                 }
 
-                if (!hashExists ||
+                if (!File.Exists(hashPath) ||
                     (DateTime.UtcNow - new FileInfo(hashPath).LastWriteTimeUtc).TotalHours > 24)
                 {
                     Console.ForegroundColor = ConsoleColor.Cyan;
@@ -116,7 +112,9 @@ namespace Inari.Resp
                 }
 
                 var hashDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(hashPath));
-                if (fileExists && hashDict.TryGetValue(fileName, out string fileHash) && fileHash != Convert.ToBase64String(
+                var keyExists = hashDict.TryGetValue(fileName, out var fileHash);
+                if (!keyExists) hashDict.TryGetValue(fileName.TrimStart('\\'), out fileHash);
+                if (fileExists && keyExists && fileHash != Convert.ToBase64String(
                     new SHA1CryptoServiceProvider().ComputeHash(File.ReadAllBytes(fileInfo.FullName))))
                 {
                     Console.ForegroundColor = ConsoleColor.DarkYellow;
@@ -192,8 +190,8 @@ namespace Inari.Resp
                     if (item.Extension != ".wav" && item.Name != "oto.ini") return;
                     var hash = Convert.ToBase64String(
                         new SHA1CryptoServiceProvider().ComputeHash(File.ReadAllBytes(item.FullName)));
-                    Console.WriteLine(hash + ":" + item.FullName.Split(dir.Name).Last().TrimStart('\\'));
-                    hashDict.Add(item.FullName.Split(dir.Name).Last().TrimStart('\\'), hash);
+                    Console.WriteLine(hash + ":" + item.FullName.Split(dir.Name).Last());
+                    hashDict.Add(item.FullName.Split(dir.Name).Last(), hash);
                 });
             });
             File.WriteAllText(dir.FullName + @"\resp.hash",
