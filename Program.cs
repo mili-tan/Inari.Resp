@@ -22,7 +22,7 @@ namespace Inari.Resp
             }
 
             Console.WriteLine("CommandLine:" + Interaction.Command());
-            Console.WriteLine("------------INARI.RESP v0.12------------");
+            Console.WriteLine("------------INARI.RESP v0.13------------");
 
             var fileInfo = new FileInfo(args.FirstOrDefault());
             var consoleColor = Console.ForegroundColor;
@@ -112,8 +112,10 @@ namespace Inari.Resp
 
                 var hashDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(hashPath));
                 var keyExists = hashDict.TryGetValue(fileName, out var fileHash);
-                if (!keyExists) hashDict.TryGetValue(fileName.TrimStart('\\'), out fileHash);
-                
+                if (!keyExists) keyExists = hashDict.TryGetValue(fileName.TrimStart('\\'), out fileHash);
+
+                Console.WriteLine("HashKeyExists:" + keyExists);
+
                 if (fileInfo.Exists && keyExists && fileHash != Convert.ToBase64String(
                     new SHA1CryptoServiceProvider().ComputeHash(File.ReadAllBytes(fileInfo.FullName))))
                 {
@@ -121,7 +123,7 @@ namespace Inari.Resp
                     Console.WriteLine("Outdated:" + fileName + " | Newer:" + fileHash);
                     File.Delete(fileInfo.FullName);
                 }
-                if (!fileInfo.Exists)
+                if (!File.Exists(fileInfo.FullName))
                 {
                     Console.ForegroundColor = ConsoleColor.Green;
                     Console.WriteLine(url + fileName);
