@@ -31,19 +31,19 @@ namespace Inari.Resp
             var utauPath = AppDomain.CurrentDomain.BaseDirectory;
             try
             {
+                if (!File.Exists(fileInfo.Directory.FullName + @"\resp.json") &&
+                    File.Exists(fileInfo.Directory.Parent.FullName + @"\resp.json"))
+                {
+                    voiceName = fileInfo.Directory.Parent.Name;
+                    voicePath = fileInfo.Directory.Parent.FullName;
+                }
+
                 if (!File.Exists(AppDomain.CurrentDomain.BaseDirectory + "utau.exe"))
                 {
                     if (File.Exists(fileInfo.Directory.Parent.Parent.FullName + @"\utau.exe"))
                         utauPath = fileInfo.Directory.Parent.Parent.FullName;
                     else if (File.Exists(fileInfo.Directory.Parent.Parent.Parent.FullName + @"\utau.exe"))
                         utauPath = fileInfo.Directory.Parent.Parent.Parent.FullName;
-                }
-
-                if (!File.Exists(fileInfo.Directory.FullName + @"\resp.json") &&
-                    File.Exists(fileInfo.Directory.Parent.FullName + @"\resp.json"))
-                {
-                    voiceName = fileInfo.Directory.Parent.Name;
-                    voicePath = fileInfo.Directory.Parent.FullName;
                 }
             }
             catch (Exception e)
@@ -53,9 +53,7 @@ namespace Inari.Resp
 
             var respPath = voicePath + @"\resp.json";
             var hashPath = voicePath + @"\resp.hash";
-
             var fileName = fileInfo.FullName.Split(voiceName).Last();
-            var fileExists = fileInfo.Exists;
 
             var res = AppDomain.CurrentDomain.BaseDirectory + "resampler.exe";
 
@@ -66,7 +64,7 @@ namespace Inari.Resp
             }
             else
             {
-                Console.WriteLine("VoiceName:" + voiceName + " | File.Exists:" + fileExists);
+                Console.WriteLine("VoiceName:" + voiceName + " | File.Exists:" + fileInfo.Exists);
                 Console.WriteLine("File:" + fileInfo.FullName + " | " + fileName);
             }
 
@@ -115,16 +113,15 @@ namespace Inari.Resp
                 var hashDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(hashPath));
                 var keyExists = hashDict.TryGetValue(fileName, out var fileHash);
                 if (!keyExists) hashDict.TryGetValue(fileName.TrimStart('\\'), out fileHash);
-                if (fileExists && keyExists && fileHash != Convert.ToBase64String(
+                
+                if (fileInfo.Exists && keyExists && fileHash != Convert.ToBase64String(
                     new SHA1CryptoServiceProvider().ComputeHash(File.ReadAllBytes(fileInfo.FullName))))
                 {
                     Console.ForegroundColor = ConsoleColor.DarkYellow;
                     Console.WriteLine("Outdated:" + fileName + " | Newer:" + fileHash);
                     File.Delete(fileInfo.FullName);
-                    fileExists = false;
                 }
-
-                if (!fileExists)
+                if (!fileInfo.Exists)
                 {
                     Console.ForegroundColor = ConsoleColor.Green;
                     Console.WriteLine(url + fileName);
