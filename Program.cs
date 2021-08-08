@@ -21,7 +21,7 @@ namespace Inari.Resp
                 return;
             }
 
-            //Console.WriteLine("CommandLine:" + Interaction.Command());
+            Console.WriteLine("CommandLine:" + Interaction.Command());
             Console.WriteLine("------------INARI.RESP v0.12------------");
 
             var fileInfo = new FileInfo(args.FirstOrDefault());
@@ -33,9 +33,10 @@ namespace Inari.Resp
             {
                 if (!File.Exists(AppDomain.CurrentDomain.BaseDirectory + "utau.exe"))
                 {
-                    utauPath = File.Exists(fileInfo.Directory.Parent.Parent.Parent.FullName + @"\utau.exe")
-                        ? fileInfo.Directory.Parent.Parent.Parent.FullName
-                        : fileInfo.Directory.Parent.Parent.FullName;
+                    if (File.Exists(fileInfo.Directory.Parent.Parent.FullName + @"\utau.exe"))
+                        utauPath = fileInfo.Directory.Parent.Parent.FullName;
+                    else if (File.Exists(fileInfo.Directory.Parent.Parent.Parent.FullName + @"\utau.exe"))
+                        utauPath = fileInfo.Directory.Parent.Parent.Parent.FullName;
                 }
 
                 if (!File.Exists(fileInfo.Directory.FullName + @"\resp.json") &&
