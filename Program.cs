@@ -29,6 +29,7 @@ namespace Inari.Resp
             var voiceName = fileInfo.Directory.Name;
             var voicePath = fileInfo.Directory.FullName;
             var utauPath = AppDomain.CurrentDomain.BaseDirectory;
+
             try
             {
                 if (!File.Exists(fileInfo.Directory.FullName + @"\resp.json") &&
@@ -54,7 +55,6 @@ namespace Inari.Resp
             var respPath = voicePath + @"\resp.json";
             var hashPath = voicePath + @"\resp.hash";
             var fileName = fileInfo.FullName.Split(voiceName).Last();
-
             var res = AppDomain.CurrentDomain.BaseDirectory + "resampler.exe";
 
             if (!File.Exists(respPath) && !fileInfo.Directory.FullName.Contains(@"\voice\"))
@@ -92,7 +92,6 @@ namespace Inari.Resp
                     }
                     if (!File.Exists(res)) Console.WriteLine("Resampler NotFound:" + res);
                 }
-
                 if (!File.Exists(hashPath) ||
                     (DateTime.UtcNow - new FileInfo(hashPath).LastWriteTimeUtc).TotalHours > 24)
                 {
@@ -109,33 +108,62 @@ namespace Inari.Resp
                         if (File.Exists(hashPath)) File.Delete(hashPath);
                     }
                 }
-
-                var hashDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(hashPath));
-                var keyExists = hashDict.TryGetValue(fileName, out var fileHash);
-                if (!keyExists) keyExists = hashDict.TryGetValue(fileName.TrimStart('\\'), out fileHash);
-
-                Console.WriteLine("HashKeyExists:" + keyExists);
-
-                if (fileInfo.Exists && keyExists && fileHash != Convert.ToBase64String(
-                    new SHA1CryptoServiceProvider().ComputeHash(File.ReadAllBytes(fileInfo.FullName))))
-                {
-                    Console.ForegroundColor = ConsoleColor.DarkYellow;
-                    Console.WriteLine("Outdated:" + fileName + " | Newer:" + fileHash);
-                    File.Delete(fileInfo.FullName);
-                }
                 if (!File.Exists(fileInfo.FullName))
                 {
+                    string wavUrl = url + fileName, wavPath = fileInfo.FullName;
                     Console.ForegroundColor = ConsoleColor.Green;
-                    Console.WriteLine(url + fileName);
+                    Console.WriteLine(wavUrl);
                     try
                     {
-                        new WebClient().DownloadFileTaskAsync(url + fileName, fileInfo.FullName).Wait(5000);
+                        new WebClient().DownloadFileTaskAsync(wavUrl, wavPath).Wait(5000);
                     }
                     catch (Exception e)
                     {
                         Console.ForegroundColor = ConsoleColor.DarkRed;
                         Console.WriteLine(e);
-                        if (File.Exists(fileInfo.FullName)) File.Delete(fileInfo.FullName);
+                        if (File.Exists(wavPath)) File.Delete(wavPath);
+                    }
+                }
+
+                ProcessRes(res, Interaction.Command(), consoleColor);
+
+                var hashDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(hashPath));
+                var keyExists = hashDict.TryGetValue(fileName, out var fileHash);
+                if (!keyExists) keyExists = hashDict.TryGetValue(fileName.TrimStart('\\'), out fileHash);
+                Console.WriteLine("HashKeyExists:" + keyExists);
+
+                if (fileInfo.Exists && keyExists && fileHash != Convert.ToBase64String(
+                    new SHA1CryptoServiceProvider().ComputeHash(File.ReadAllBytes(fileInfo.FullName))))
+                {
+                    Console.ForegroundColor = ConsoleColor.Yellow;
+                    Console.WriteLine("Outdated:" + fileName + " | Newer:" + fileHash);
+                    File.Delete(fileInfo.FullName);
+                    File.Delete(fileInfo.FullName + ".frq");
+                    File.Delete(fileInfo.FullName + ".frc");
+                    File.Delete(fileInfo.FullName + ".pmk");
+                    File.Delete(fileInfo.FullName + ".dio");
+                    File.Delete(fileInfo.FullName + ".vs4ufrq");
+                    File.Delete(fileInfo.FullName + ".llsm");
+                    File.Delete(fileInfo.Directory.FullName + @"\desc.mrq");
+                    File.Delete(fileInfo.Directory.FullName + @"\oto.ini");
+
+                    if (!File.Exists(fileInfo.Directory.FullName + @"\oto.ini"))
+                    {
+                        string otoUrl = url + fileName.TrimEnd(fileInfo.Name.ToCharArray()) + "oto.ini",
+                            otoPath = fileInfo.Directory.FullName + @"\oto.ini";
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.WriteLine(otoUrl);
+                        try
+                        {
+                            new WebClient().DownloadFileTaskAsync(otoUrl, otoPath).Wait(5000);
+                        }
+                        catch (Exception e)
+                        {
+                            Console.ForegroundColor = ConsoleColor.DarkRed;
+                            Console.WriteLine(e);
+                            if (File.Exists(otoPath)) File.Delete(otoPath);
+                            new WebClient().DownloadFileTaskAsync(otoUrl, otoPath).Wait(5000);
+                        }
                     }
                 }
             }
@@ -143,15 +171,21 @@ namespace Inari.Resp
             {
                 Console.ForegroundColor = ConsoleColor.DarkRed;
                 Console.WriteLine("The RESP.json configuration file is missing. ");
+                ProcessRes(res, Interaction.Command(), consoleColor);
             }
 
             Console.WriteLine();
             Console.ForegroundColor = consoleColor;
+        }
 
+        public static void ProcessRes(string res, string cmd, ConsoleColor color = ConsoleColor.White)
+        {
+            Console.ForegroundColor = color;
+            Console.WriteLine();
             var info = new ProcessStartInfo
             {
                 FileName = res,
-                Arguments = Interaction.Command(),
+                Arguments = cmd,
                 RedirectStandardOutput = true,
                 CreateNoWindow = false,
                 UseShellExecute = false
