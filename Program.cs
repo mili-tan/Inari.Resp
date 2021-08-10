@@ -145,7 +145,14 @@ namespace Inari.Resp
                     File.Delete(fileInfo.FullName + ".vs4ufrq");
                     File.Delete(fileInfo.FullName + ".llsm");
                     File.Delete(fileInfo.Directory.FullName + @"\desc.mrq");
-                    File.Delete(fileInfo.Directory.FullName + @"\oto.ini");
+
+                    if (!hashDict.Values.Contains(Convert.ToBase64String(
+                        new SHA1CryptoServiceProvider().ComputeHash(
+                            File.ReadAllBytes(fileInfo.Directory.FullName + @"\oto.ini")))))
+                    {
+                        Console.WriteLine("Outdated:oto.ini");
+                        File.Delete(fileInfo.Directory.FullName + @"\oto.ini");
+                    }
 
                     if (!File.Exists(fileInfo.Directory.FullName + @"\oto.ini"))
                     {
