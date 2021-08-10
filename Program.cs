@@ -153,24 +153,24 @@ namespace Inari.Resp
                         Console.WriteLine("Outdated:oto.ini");
                         File.Delete(fileInfo.Directory.FullName + @"\oto.ini");
                     }
+                }
 
-                    if (!File.Exists(fileInfo.Directory.FullName + @"\oto.ini"))
+                if (!File.Exists(fileInfo.Directory.FullName + @"\oto.ini"))
+                {
+                    string otoUrl = url + fileName.TrimEnd(fileInfo.Name.ToCharArray()) + "oto.ini",
+                        otoPath = fileInfo.Directory.FullName + @"\oto.ini";
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine(otoUrl);
+                    try
                     {
-                        string otoUrl = url + fileName.TrimEnd(fileInfo.Name.ToCharArray()) + "oto.ini",
-                            otoPath = fileInfo.Directory.FullName + @"\oto.ini";
-                        Console.ForegroundColor = ConsoleColor.Green;
-                        Console.WriteLine(otoUrl);
-                        try
-                        {
-                            new WebClient().DownloadFileTaskAsync(otoUrl, otoPath).Wait(5000);
-                        }
-                        catch (Exception e)
-                        {
-                            Console.ForegroundColor = ConsoleColor.DarkRed;
-                            Console.WriteLine(e);
-                            if (File.Exists(otoPath)) File.Delete(otoPath);
-                            new WebClient().DownloadFileTaskAsync(otoUrl, otoPath).Wait(5000);
-                        }
+                        new WebClient().DownloadFileTaskAsync(otoUrl, otoPath).Wait(5000);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.ForegroundColor = ConsoleColor.DarkRed;
+                        Console.WriteLine(e);
+                        if (File.Exists(otoPath)) File.Delete(otoPath);
+                        new WebClient().DownloadFileTaskAsync(otoUrl, otoPath).Wait(5000);
                     }
                 }
             }
