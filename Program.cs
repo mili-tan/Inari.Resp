@@ -199,7 +199,7 @@ namespace Inari.Resp
             while (string.IsNullOrEmpty(line) || !Directory.Exists(line))
             {
                 Console.WriteLine("Drop the folder and press enter to generate hash");
-                line = Console.ReadLine();
+                line = Console.ReadLine().Trim('\"');
             }
 
             var dir = new DirectoryInfo(line);
