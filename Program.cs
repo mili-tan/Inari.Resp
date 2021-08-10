@@ -80,6 +80,7 @@ namespace Inari.Resp
                     res = File.Exists(utauPath + '\\' + res)
                         ? utauPath + '\\' + res
                         : AppDomain.CurrentDomain.BaseDirectory + res;
+
                 if (!File.Exists(res))
                 {
                     Console.ForegroundColor = ConsoleColor.DarkYellow;
@@ -96,37 +97,17 @@ namespace Inari.Resp
                     (DateTime.UtcNow - new FileInfo(hashPath).LastWriteTimeUtc).TotalHours > 24)
                 {
                     Console.ForegroundColor = ConsoleColor.Cyan;
-                    Console.WriteLine("Sync:RESP.hash");
-                    try
-                    {
-                        new WebClient().DownloadFileTaskAsync(url + "resp.hash", hashPath).Wait(3000);
-                    }
-                    catch (Exception e)
-                    {
-                        Console.ForegroundColor = ConsoleColor.DarkRed;
-                        Console.WriteLine(e);
-                        if (File.Exists(hashPath)) File.Delete(hashPath);
-                    }
+                    Console.WriteLine("Sync:RESP.hash | " + url + "resp.hash");
+                    Download(url + "resp.hash", hashPath);
                 }
                 if (!File.Exists(fileInfo.FullName))
                 {
-                    string wavUrl = url + fileName, wavPath = fileInfo.FullName;
                     Console.ForegroundColor = ConsoleColor.Green;
-                    Console.WriteLine(wavUrl);
-                    try
-                    {
-                        new WebClient().DownloadFileTaskAsync(wavUrl, wavPath).Wait(5000);
-                    }
-                    catch (Exception e)
-                    {
-                        Console.ForegroundColor = ConsoleColor.DarkRed;
-                        Console.WriteLine(e);
-                        if (File.Exists(wavPath)) File.Delete(wavPath);
-                    }
+                    Console.WriteLine(url + fileName);
+                    Download(url + fileName, fileInfo.FullName);
                 }
 
                 ProcessRes(res, Interaction.Command(), consoleColor);
-
                 var hashDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(hashPath));
                 var keyExists = hashDict.TryGetValue(fileName, out var fileHash);
                 if (!keyExists) keyExists = hashDict.TryGetValue(fileName.TrimStart('\\'), out fileHash);
@@ -145,14 +126,14 @@ namespace Inari.Resp
                     File.Delete(fileInfo.FullName + ".vs4ufrq");
                     File.Delete(fileInfo.FullName + ".llsm");
                     File.Delete(fileInfo.Directory.FullName + @"\desc.mrq");
+                }
 
-                    if (!hashDict.Values.Contains(Convert.ToBase64String(
-                        new SHA1CryptoServiceProvider().ComputeHash(
-                            File.ReadAllBytes(fileInfo.Directory.FullName + @"\oto.ini")))))
-                    {
-                        Console.WriteLine("Outdated:oto.ini");
-                        File.Delete(fileInfo.Directory.FullName + @"\oto.ini");
-                    }
+                if (!hashDict.Values.Contains(Convert.ToBase64String(
+                    new SHA1CryptoServiceProvider().ComputeHash(
+                        File.ReadAllBytes(fileInfo.Directory.FullName + @"\oto.ini")))))
+                {
+                    Console.WriteLine("Outdated:oto.ini");
+                    File.Delete(fileInfo.Directory.FullName + @"\oto.ini");
                 }
 
                 if (!File.Exists(fileInfo.Directory.FullName + @"\oto.ini"))
@@ -161,17 +142,7 @@ namespace Inari.Resp
                         otoPath = fileInfo.Directory.FullName + @"\oto.ini";
                     Console.ForegroundColor = ConsoleColor.Green;
                     Console.WriteLine(otoUrl);
-                    try
-                    {
-                        new WebClient().DownloadFileTaskAsync(otoUrl, otoPath).Wait(5000);
-                    }
-                    catch (Exception e)
-                    {
-                        Console.ForegroundColor = ConsoleColor.DarkRed;
-                        Console.WriteLine(e);
-                        if (File.Exists(otoPath)) File.Delete(otoPath);
-                        new WebClient().DownloadFileTaskAsync(otoUrl, otoPath).Wait(5000);
-                    }
+                    Download(otoUrl, otoPath);
                 }
             }
             else
@@ -183,6 +154,20 @@ namespace Inari.Resp
 
             Console.WriteLine();
             Console.ForegroundColor = consoleColor;
+        }
+
+        public static void Download(string url, string path)
+        {
+            try
+            {
+                new WebClient().DownloadFileTaskAsync(url, path).Wait(5000);
+            }
+            catch (Exception e)
+            {
+                Console.ForegroundColor = ConsoleColor.DarkRed;
+                Console.WriteLine(e);
+                if (File.Exists(path)) File.Delete(path);
+            }
         }
 
         public static void ProcessRes(string res, string cmd, ConsoleColor color = ConsoleColor.White)
