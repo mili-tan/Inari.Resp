@@ -54,7 +54,7 @@ namespace Inari.Resp
 
             var respPath = voicePath + @"\resp.json";
             var hashPath = voicePath + @"\resp.hash";
-            var fileName = fileInfo.FullName.Split(voiceName).Last();
+            var fileName = fileInfo.FullName.Split(voiceName).Last().TrimStart('\\');
             var res = AppDomain.CurrentDomain.BaseDirectory + "resampler.exe";
 
             if (!File.Exists(respPath) && !fileInfo.Directory.FullName.Contains(@"\voice\"))
@@ -111,6 +111,8 @@ namespace Inari.Resp
                 var hashDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(hashPath));
                 var keyExists = hashDict.TryGetValue(fileName, out var fileHash);
                 if (!keyExists) keyExists = hashDict.TryGetValue(fileName.TrimStart('\\'), out fileHash);
+                if (!keyExists) keyExists = hashDict.TryGetValue('\\' + fileName, out fileHash);
+
                 Console.WriteLine("HashKeyExists:" + keyExists);
 
                 if (fileInfo.Exists && keyExists && fileHash != Convert.ToBase64String(
@@ -126,14 +128,15 @@ namespace Inari.Resp
                     File.Delete(fileInfo.FullName + ".vs4ufrq");
                     File.Delete(fileInfo.FullName + ".llsm");
                     File.Delete(fileInfo.Directory.FullName + @"\desc.mrq");
-                }
 
-                if (!hashDict.Values.Contains(Convert.ToBase64String(
-                    new SHA1CryptoServiceProvider().ComputeHash(
-                        File.ReadAllBytes(fileInfo.Directory.FullName + @"\oto.ini")))))
-                {
-                    Console.WriteLine("Outdated:oto.ini");
-                    File.Delete(fileInfo.Directory.FullName + @"\oto.ini");
+                    if (!hashDict.Values.Contains(Convert.ToBase64String(
+                        new SHA1CryptoServiceProvider().ComputeHash(
+                            File.ReadAllBytes(fileInfo.Directory.FullName + @"\oto.ini")))))
+                    {
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.WriteLine("Outdated:oto.ini");
+                        File.Delete(fileInfo.Directory.FullName + @"\oto.ini");
+                    }
                 }
 
                 if (!File.Exists(fileInfo.Directory.FullName + @"\oto.ini"))
@@ -196,7 +199,7 @@ namespace Inari.Resp
             while (string.IsNullOrEmpty(line) || !Directory.Exists(line))
             {
                 Console.WriteLine("Drop the folder and press enter to generate hash");
-                Console.ReadLine();
+                line = Console.ReadLine();
             }
 
             var dir = new DirectoryInfo(line);
