@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using IniParser;
 using Newtonsoft.Json;
@@ -115,7 +116,7 @@ namespace RespP
 
             Console.WriteLine("---------------");
             Console.WriteLine("Files are all synced.");
-            Console.ReadLine();
+            Thread.Sleep(500);
         }
 
         public static void Download(string url, string path)
