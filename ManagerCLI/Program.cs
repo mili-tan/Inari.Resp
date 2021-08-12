@@ -32,7 +32,7 @@ namespace RespP
             ustData.Sections.RemoveSection("#NEXT");
 
             var voiceDir = ustData.Sections["#SETTING"]["VoiceDir"].TrimEnd('\\') + "\\";
-            var respDict = new Dictionary<string,(DirectoryInfo dir, bool root)>();
+            var respDict = new Dictionary<(string name, DirectoryInfo dir),(DirectoryInfo dir, bool root)>();
             var preDict = new Dictionary<string, string>();
 
             if (File.Exists(voiceDir + "prefix.map"))
@@ -82,8 +82,9 @@ namespace RespP
                         $"{lyric} : {path} : {File.Exists(path)} {(targetValue.root ? " *" : string.Empty)}");
                     if (File.Exists(path)) return;
                     lock (respDict)
-                        if (!respDict.ContainsKey(targetValue.name))
-                            respDict.Add(targetValue.name, (targetValue.dir, targetValue.root));
+                        //Fix Here 
+                        if (!respDict.ContainsKey((targetValue.name, targetValue.dir)))
+                            respDict.Add((targetValue.name, targetValue.dir), (targetValue.dir, targetValue.root));
                 }
                 catch (Exception e)
                 {
@@ -103,14 +104,13 @@ namespace RespP
             }
 
             var cfgDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(voiceDir + "resp.json"));
-            var timeout = cfgDict.TryGetValue("timeout", out var timeValue) ? Convert.ToInt32(timeValue) : 5000;
             var url = cfgDict["source"];
 
             Parallel.ForEach(respDict, i =>
             {
-                var uname = !i.Value.root ? i.Value.dir.Name + "\\" + i.Key : i.Key;
+                var uname = !i.Value.root ? i.Value.dir.Name + "\\" + i.Key.name : i.Key.name;
                 Download(url + uname,
-                    i.Value.dir.FullName + "\\" + i.Key, timeout);
+                    i.Value.dir.FullName + "\\" + i.Key.name);
             });
 
             Console.WriteLine("---------------");
@@ -118,11 +118,11 @@ namespace RespP
             Console.ReadLine();
         }
 
-        public static void Download(string url, string path, int timeout)
+        public static void Download(string url, string path)
         {
             try
             {
-                new WebClient().DownloadFileTaskAsync(url, path).Wait(timeout * 4);
+                new WebClient().DownloadFile(url, path);
                 if (File.Exists(path))
                 {
                     Console.ForegroundColor = ConsoleColor.Green;
