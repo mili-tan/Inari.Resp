@@ -5,14 +5,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using IniParser;
-using IniParser.Model;
 
 namespace ManagerCLI
 {
     class Program
     {
-        public static IniData UstData;
-        private static readonly string UstHeader = "[#VERSION]\r\n" + "UST Version 1.20\r\n";
         static void Main(string[] args)
         {
             if (string.IsNullOrWhiteSpace(args.FirstOrDefault()))
@@ -21,16 +18,14 @@ namespace ManagerCLI
                 return;
             }
 
-            string ustFileStr = File.ReadAllText(args.FirstOrDefault(), Encoding.Default)
-                .Replace(UstHeader, "");
+            var perfixData = new FileIniDataParser().Parser.Parse(
+                File.ReadAllText(AppDomain.CurrentDomain.BaseDirectory + "\\" + "prefix.ini"));
+            var ustData = new FileIniDataParser().Parser.Parse(File.ReadAllText(args.FirstOrDefault(), Encoding.Default)
+                .Replace("[#VERSION]\r\n" + "UST Version 1.20\r\n", ""));
+            ustData.Sections.RemoveSection("#PREV");
+            ustData.Sections.RemoveSection("#NEXT");
 
-            var perfixData =
-                new FileIniDataParser().Parser.Parse(
-                    File.ReadAllText(AppDomain.CurrentDomain.BaseDirectory + "\\" + "prefix.ini"));
-            UstData = new FileIniDataParser().Parser.Parse(ustFileStr);
-            UstData.Sections.RemoveSection("#PREV");
-            UstData.Sections.RemoveSection("#NEXT");
-            var voiceDir = UstData.Sections["#SETTING"]["VoiceDir"].TrimEnd('\\') + "\\";
+            var voiceDir = ustData.Sections["#SETTING"]["VoiceDir"].TrimEnd('\\') + "\\";
             var otoDict = new Dictionary<string, (string, DirectoryInfo, bool)>();
             var preDict = new Dictionary<string, string>();
 
@@ -49,53 +44,11 @@ namespace ManagerCLI
             {
                 Console.WriteLine(voiceDir);
                 var vDir = new DirectoryInfo(voiceDir);
-                foreach (var file in vDir.GetFiles())
-                {
-                    if (file.Name != "oto.ini") continue;
-                    Parallel.ForEach(File.ReadLines(file.FullName, Encoding.Default), i =>
-                    {
-                        if (string.IsNullOrWhiteSpace(i)) return;
-                        var split = i.Split(',').FirstOrDefault().Split('=');
-                        if (otoDict.ContainsKey(split.LastOrDefault())) return;
-                        try
-                        {
-                            lock (otoDict)
-                                otoDict.Add(split.LastOrDefault(), (split.FirstOrDefault(), vDir, true));
-                        }
-                        catch (Exception e)
-                        {
-                            Console.WriteLine(i);
-                            Console.WriteLine(e);
-                        }
-                    });
-                }
+                otoDict = otoDict.Concat(GetOto(vDir)).ToDictionary(p => p.Key, p => p.Value);
 
                 if (vDir.GetDirectories().Length != 0)
-                {
-                    foreach (var dir in vDir.GetDirectories())
-                    {
-                        foreach (var file in dir.GetFiles())
-                        {
-                            if (file.Name != "oto.ini") continue;
-                            Parallel.ForEach(File.ReadLines(file.FullName, Encoding.Default), i =>
-                            {
-                                if (string.IsNullOrWhiteSpace(i)) return;
-                                var split = i.Split(',').FirstOrDefault().Split('=');
-                                if (otoDict.ContainsKey(split.LastOrDefault())) return;
-                                try
-                                {
-                                    lock (otoDict)
-                                        otoDict.Add(split.LastOrDefault(), (split.FirstOrDefault(), vDir, true));
-                                }
-                                catch (Exception e)
-                                {
-                                    Console.WriteLine(i);
-                                    Console.WriteLine(e);
-                                }
-                            });
-                        }
-                    }
-                }
+                    foreach (var directory in vDir.GetDirectories())
+                        otoDict = otoDict.Concat(GetOto(directory)).ToDictionary(p => p.Key, p => p.Value);
 
                 //foreach (var item in otoDict)
                 //    Console.WriteLine(item.Key + ":" + item.Value.Item2.FullName + item.Value.Item1);
@@ -106,7 +59,7 @@ namespace ManagerCLI
                 Console.WriteLine(e);
             }
 
-            Parallel.ForEach(UstData.Sections, itemSection =>
+            Parallel.ForEach(ustData.Sections, itemSection =>
             {
                 if (!itemSection.Keys.ContainsKey("NoteNum")) return;
                 if (itemSection.Keys["Lyric"] == "R") return;
@@ -115,10 +68,10 @@ namespace ManagerCLI
                     var lyric = itemSection.Keys["Lyric"];
                     var tone = perfixData.Sections.FirstOrDefault().Keys[itemSection.Keys["NoteNum"].ToString()];
 
-                    if (preDict.TryGetValue(tone, out var prefixValue))
-                        lyric = lyric + prefixValue;
+                    if (preDict.TryGetValue(tone, out var prefixValue)) lyric += prefixValue;
                     if (!otoDict.TryGetValue(lyric, out var targetValue)) return;
-                    Console.WriteLine(lyric + " : " + targetValue.Item2.FullName + targetValue.Item1);
+                    var path = targetValue.Item2.FullName + targetValue.Item1;
+                    Console.WriteLine($"{lyric} : {path} : {File.Exists(path)}");
                 }
                 catch (Exception e)
                 {
@@ -127,6 +80,32 @@ namespace ManagerCLI
             });
 
             Console.ReadLine();
+        }
+
+        public static Dictionary<string, (string, DirectoryInfo, bool)> GetOto(DirectoryInfo vDir)
+        {
+            var otoDict = new Dictionary<string, (string, DirectoryInfo, bool)>();
+            foreach (var file in vDir.GetFiles())
+            {
+                if (file.Name != "oto.ini") continue;
+                Parallel.ForEach(File.ReadLines(file.FullName, Encoding.Default), i =>
+                {
+                    if (string.IsNullOrWhiteSpace(i)) return;
+                    var split = i.Split(',').FirstOrDefault().Split('=');
+                    if (otoDict.ContainsKey(split.LastOrDefault())) return;
+                    try
+                    {
+                        lock (otoDict)
+                            otoDict.Add(split.LastOrDefault(), (split.FirstOrDefault(), vDir, true));
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(i);
+                        Console.WriteLine(e);
+                    }
+                });
+            }
+            return otoDict;
         }
     }
 }
