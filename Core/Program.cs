@@ -107,6 +107,13 @@ namespace Inari.Resp
                     Download(url + fileName, fileInfo.FullName);
                 }
 
+                if (File.Exists(fileInfo.FullName + ".noupdate") ||
+                    File.Exists(fileInfo.Directory.FullName + @"\resp.noupdate"))
+                {
+                    Console.WriteLine("NoUpdate:" + fileName);
+                    return;
+                }
+
                 ProcessRes(res, Interaction.Command(), consoleColor);
                 var hashDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(hashPath));
                 var keyExists = hashDict.TryGetValue(fileName, out var fileHash);
