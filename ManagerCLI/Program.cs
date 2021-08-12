@@ -81,7 +81,7 @@ namespace RespP
                     Console.WriteLine(
                         $"{lyric} : {path} : {File.Exists(path)} {(targetValue.root ? " *" : string.Empty)}");
                     if (File.Exists(path)) return;
-                    lock (OtoDict)
+                    lock (respDict)
                         if (!respDict.ContainsKey(targetValue.name))
                             respDict.Add(targetValue.name, (targetValue.dir, targetValue.root));
                 }
@@ -108,16 +108,9 @@ namespace RespP
 
             Parallel.ForEach(respDict, i =>
             {
-                try
-                {
-                    var uname = !i.Value.root ? i.Value.dir.Name + "\\" + i.Key : i.Key;
-                    Download(url + uname,
-                        i.Value.dir.FullName + "\\" + i.Key, timeout);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e.Message);
-                }
+                var uname = !i.Value.root ? i.Value.dir.Name + "\\" + i.Key : i.Key;
+                Download(url + uname,
+                    i.Value.dir.FullName + "\\" + i.Key, timeout);
             });
 
             Console.WriteLine("---------------");
@@ -129,9 +122,17 @@ namespace RespP
         {
             try
             {
-                Console.ForegroundColor = ConsoleColor.Green;
                 new WebClient().DownloadFileTaskAsync(url, path).Wait(timeout * 4);
-                Console.WriteLine($"{url} : DONE!");
+                if (File.Exists(path))
+                {
+                    Console.ForegroundColor = ConsoleColor.Green;
+                    Console.WriteLine($"{url} : DONE!");
+                }
+                else
+                {
+                    Console.ForegroundColor = ConsoleColor.Red;
+                    Console.WriteLine($"{url} : TimeOut!");
+                }
             }
             catch (Exception e)
             {
