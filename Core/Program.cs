@@ -73,6 +73,7 @@ namespace Inari.Resp
             if (File.Exists(respPath))
             {
                 var respDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(respPath));
+                var timeout = respDict.TryGetValue("timeout", out var timeValue) ? Convert.ToInt32(timeValue) : 5000;
                 var url = respDict["source"];
                 res = respDict["resampler"];
 
@@ -98,13 +99,13 @@ namespace Inari.Resp
                 {
                     Console.ForegroundColor = ConsoleColor.Cyan;
                     Console.WriteLine("Sync:RESP.hash | " + url + "resp.hash");
-                    Download(url + "resp.hash", hashPath);
+                    Download(url + "resp.hash", hashPath,timeout);
                 }
                 if (!File.Exists(fileInfo.FullName))
                 {
                     Console.ForegroundColor = ConsoleColor.Green;
                     Console.WriteLine(url + fileName);
-                    Download(url + fileName, fileInfo.FullName);
+                    Download(url + fileName, fileInfo.FullName, timeout);
                 }
 
                 if (File.Exists(fileInfo.FullName + ".noupdate") ||
@@ -152,7 +153,7 @@ namespace Inari.Resp
                         otoPath = fileInfo.Directory.FullName + @"\oto.ini";
                     Console.ForegroundColor = ConsoleColor.Green;
                     Console.WriteLine(otoUrl);
-                    Download(otoUrl, otoPath);
+                    Download(otoUrl, otoPath, timeout);
                 }
             }
             else
@@ -166,11 +167,11 @@ namespace Inari.Resp
             Console.ForegroundColor = consoleColor;
         }
 
-        public static void Download(string url, string path)
+        public static void Download(string url, string path,int timeout)
         {
             try
             {
-                new WebClient().DownloadFileTaskAsync(url, path).Wait(5000);
+                new WebClient().DownloadFileTaskAsync(url, path).Wait(timeout);
             }
             catch (Exception e)
             {
