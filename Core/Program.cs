@@ -170,7 +170,7 @@ namespace Inari.Resp
             Console.ForegroundColor = consoleColor;
         }
 
-        public static void Download(string url, string path,int timeout)
+        public static void Download(string url, string path, int timeout)
         {
             try
             {

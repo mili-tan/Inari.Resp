@@ -2,9 +2,11 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using IniParser;
+using Newtonsoft.Json;
 
 namespace ManagerCLI
 {
@@ -26,7 +28,8 @@ namespace ManagerCLI
             ustData.Sections.RemoveSection("#NEXT");
 
             var voiceDir = ustData.Sections["#SETTING"]["VoiceDir"].TrimEnd('\\') + "\\";
-            var otoDict = new Dictionary<string, (string, DirectoryInfo, bool)>();
+            var respList = new List<(string name, DirectoryInfo dir, bool root)>();
+            var otoDict = new Dictionary<string, (string name, DirectoryInfo dir, bool root)>();
             var preDict = new Dictionary<string, string>();
 
             if (File.Exists(voiceDir + "prefix.map"))
@@ -44,11 +47,11 @@ namespace ManagerCLI
             {
                 Console.WriteLine(voiceDir);
                 var vDir = new DirectoryInfo(voiceDir);
-                otoDict = otoDict.Concat(GetOto(vDir)).ToDictionary(p => p.Key, p => p.Value);
+                otoDict = otoDict.Concat(GetOto(vDir, true)).ToDictionary(p => p.Key, p => p.Value);
 
                 if (vDir.GetDirectories().Length != 0)
                     foreach (var directory in vDir.GetDirectories())
-                        otoDict = otoDict.Concat(GetOto(directory)).ToDictionary(p => p.Key, p => p.Value);
+                        otoDict = otoDict.Concat(GetOto(directory, false)).ToDictionary(p => p.Key, p => p.Value);
 
                 //foreach (var item in otoDict)
                 //    Console.WriteLine(item.Key + ":" + item.Value.Item2.FullName + item.Value.Item1);
@@ -70,8 +73,10 @@ namespace ManagerCLI
 
                     if (preDict.TryGetValue(tone, out var prefixValue)) lyric += prefixValue;
                     if (!otoDict.TryGetValue(lyric, out var targetValue)) return;
-                    var path = targetValue.Item2.FullName + targetValue.Item1;
-                    Console.WriteLine($"{lyric} : {path} : {File.Exists(path)}");
+                    var path = targetValue.dir.FullName + targetValue.name;
+                    Console.WriteLine(
+                        $"{lyric} : {path} : {File.Exists(path)} {(targetValue.root ? " : Main" : string.Empty)}");
+                    if (!File.Exists(path)) respList.Add(targetValue);
                 }
                 catch (Exception e)
                 {
@@ -79,10 +84,44 @@ namespace ManagerCLI
                 }
             });
 
+            if (respList.Count == 0) return;
+            if (!File.Exists(voiceDir + "resp.json"))
+            {
+                Console.ForegroundColor = ConsoleColor.DarkRed;
+                Console.WriteLine("The RESP.json configuration file is missing. ");
+                Console.ReadLine();
+                return;
+            }
+
+            var respDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(voiceDir + "resp.json"));
+            var timeout = respDict.TryGetValue("timeout", out var timeValue) ? Convert.ToInt32(timeValue) : 5000;
+            var url = respDict["source"];
+
+            Console.ForegroundColor = ConsoleColor.Green;
+            Parallel.ForEach(respList, i =>
+            {
+                Download(url + (i.root ? i.dir.Name + "\\" + i.name : i.name),
+                    i.dir.FullName + i.name, timeout);
+            });
+
             Console.ReadLine();
         }
 
-        public static Dictionary<string, (string, DirectoryInfo, bool)> GetOto(DirectoryInfo vDir)
+        public static void Download(string url, string path, int timeout)
+        {
+            try
+            {
+                new WebClient().DownloadFileTaskAsync(url, path).Wait(timeout);
+            }
+            catch (Exception e)
+            {
+                Console.ForegroundColor = ConsoleColor.DarkRed;
+                Console.WriteLine(e);
+                if (File.Exists(path)) File.Delete(path);
+            }
+        }
+
+        public static Dictionary<string, (string, DirectoryInfo, bool)> GetOto(DirectoryInfo vDir, bool root)
         {
             var otoDict = new Dictionary<string, (string, DirectoryInfo, bool)>();
             foreach (var file in vDir.GetFiles())
@@ -96,7 +135,7 @@ namespace ManagerCLI
                     try
                     {
                         lock (otoDict)
-                            otoDict.Add(split.LastOrDefault(), (split.FirstOrDefault(), vDir, true));
+                            otoDict.Add(split.LastOrDefault(), (split.FirstOrDefault(), vDir, root));
                     }
                     catch (Exception e)
                     {
@@ -105,6 +144,7 @@ namespace ManagerCLI
                     }
                 });
             }
+
             return otoDict;
         }
     }
