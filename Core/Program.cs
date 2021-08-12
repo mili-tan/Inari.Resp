@@ -108,14 +108,17 @@ namespace Inari.Resp
                     Download(url + fileName, fileInfo.FullName, timeout);
                 }
 
+                ProcessRes(res, Interaction.Command(), consoleColor);
+
                 if (File.Exists(fileInfo.FullName + ".noupdate") ||
                     File.Exists(fileInfo.Directory.FullName + @"\resp.noupdate"))
                 {
+                    Console.ForegroundColor = ConsoleColor.Cyan;
                     Console.WriteLine("NoUpdate:" + fileName);
+                    Console.ForegroundColor = consoleColor;
                     return;
                 }
 
-                ProcessRes(res, Interaction.Command(), consoleColor);
                 var hashDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(hashPath));
                 var keyExists = hashDict.TryGetValue(fileName, out var fileHash);
                 if (!keyExists) keyExists = hashDict.TryGetValue(fileName.TrimStart('\\'), out fileHash);
