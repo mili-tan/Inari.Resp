@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Inari.Resp", "Core\Inari.Re
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Inari.Resp.Manager", "Manager\Inari.Resp.Manager.csproj", "{01778A3F-11A9-49E8-B638-A012A75DB6FF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ManagerCLI", "ManagerCLI\ManagerCLI.csproj", "{FCCC363E-C6BC-4BEE-A479-63ED22BEDC81}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RESPP", "ManagerCLI\RESPP.csproj", "{FCCC363E-C6BC-4BEE-A479-63ED22BEDC81}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
