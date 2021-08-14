@@ -29,19 +29,12 @@ namespace RespP
                 File.ReadAllText(AppDomain.CurrentDomain.BaseDirectory + "\\" + "prefix.ini"));
             var ustData = new FileIniDataParser().Parser.Parse(File.ReadAllText(args.FirstOrDefault(), Encoding.Default)
                 .Replace("[#VERSION]\r\n" + "UST Version 1.20\r\n", ""));
-            //ustData.Sections.RemoveSection("#PREV");
-            //ustData.Sections.RemoveSection("#NEXT");
+            ustData.Sections.RemoveSection("#PREV");
+            ustData.Sections.RemoveSection("#NEXT");
 
             var voiceDir = ustData.Sections["#SETTING"]["VoiceDir"].TrimEnd('\\') + "\\";
+            var respDict = new Dictionary<(string name, DirectoryInfo dir),(DirectoryInfo dir, bool root)>();
             var preDict = new Dictionary<string, string>();
-
-            if (!File.Exists(voiceDir + "resp.json"))
-            {
-                Console.WriteLine("---------------");
-                Console.ForegroundColor = ConsoleColor.DarkRed;
-                if (!File.Exists(voiceDir + "resp.json")) Console.WriteLine("The RESP.json configuration file is missing. ");
-                return;
-            }
 
             if (File.Exists(voiceDir + "prefix.map"))
             {
@@ -64,7 +57,7 @@ namespace RespP
                     foreach (var directory in vDir.GetDirectories())
                         GetOto(directory, false);
 
-                //foreach (var item in otoDict)
+                //foreach (var item in OtoDict)
                 //    Console.WriteLine(item.Key + ":" + item.Value.Item2.FullName + item.Value.Item1);
                 //foreach (var i in preDict) Console.WriteLine(i.Key + ":" + i.Value);
             }
@@ -73,32 +66,49 @@ namespace RespP
                 Console.WriteLine(e);
             }
 
-            var cfgDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(voiceDir + "resp.json"));
-            var url = cfgDict["source"];
-
-            Parallel.ForEach(ustData.Sections, itemSection =>
+            foreach (var itemSection in ustData.Sections)
             {
-                if (!itemSection.Keys.ContainsKey("NoteNum")) return;
-                if (itemSection.Keys["Lyric"] == "R") return;
                 try
                 {
+                    if (!itemSection.Keys.ContainsKey("NoteNum")) continue;
+                    if (itemSection.Keys["Lyric"] == "R") continue;
                     var lyric = itemSection.Keys["Lyric"];
-                    var tone = perfixData.Sections.FirstOrDefault().Keys[itemSection.Keys["NoteNum"].ToString()];
+                    var tone = perfixData.Sections.FirstOrDefault().Keys[itemSection.Keys["NoteNum"]];
                     (string name, DirectoryInfo dir, bool root) targetValue;
                     if (preDict.TryGetValue(tone, out var prefixValue)) lyric += prefixValue;
-
-                    lock (OtoDict) if (!OtoDict.TryGetValue(lyric, out targetValue)) return;
+                    lock (OtoDict) if (!OtoDict.TryGetValue(lyric, out targetValue)) continue;
                     var path = targetValue.dir.FullName + "\\" + targetValue.name;
                     Console.WriteLine(
                         $"{lyric} : {path} : {File.Exists(path)} {(targetValue.root ? " *" : string.Empty)}");
-                    if (File.Exists(path)) return;
-                    var uname = !targetValue.root ? targetValue.dir.Name + "\\" + targetValue.name : targetValue.name;
-                    Download(url + uname, targetValue.dir.FullName + "\\" + targetValue.name);
+                    if (File.Exists(path)) continue;
+                    if (!respDict.ContainsKey((targetValue.name, targetValue.dir)))
+                        respDict.Add((targetValue.name, targetValue.dir), (targetValue.dir, targetValue.root));
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine(e);
                 }
+            }
+
+            if (!File.Exists(voiceDir + "resp.json") || respDict.Count == 0)
+            {
+                Console.WriteLine("---------------");
+                Console.ForegroundColor = ConsoleColor.DarkRed;
+                if (!File.Exists(voiceDir + "resp.json")) Console.WriteLine("The RESP.json configuration file is missing. ");
+                Console.ForegroundColor = ConsoleColor.Green;
+                if (respDict.Count == 0) Console.WriteLine("Files are all synced.");
+                Console.ReadLine();
+                return;
+            }
+
+            var cfgDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(voiceDir + "resp.json"));
+            var url = cfgDict["source"];
+
+            Parallel.ForEach(respDict, i =>
+            {
+                var uname = !i.Value.root ? i.Value.dir.Name + "\\" + i.Key.name : i.Key.name;
+                Download(url + uname,
+                    i.Value.dir.FullName + "\\" + i.Key.name);
             });
 
             Console.WriteLine("---------------");
