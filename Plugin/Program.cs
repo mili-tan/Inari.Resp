@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 using IniParser;
 using Newtonsoft.Json;
 
-namespace RespP
+namespace Inari.Resp.Plugin
 {
     class Program
     {
