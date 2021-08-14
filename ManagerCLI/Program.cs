@@ -33,8 +33,15 @@ namespace RespP
             //ustData.Sections.RemoveSection("#NEXT");
 
             var voiceDir = ustData.Sections["#SETTING"]["VoiceDir"].TrimEnd('\\') + "\\";
-            var respDict = new Dictionary<(string name, DirectoryInfo dir),(DirectoryInfo dir, bool root)>();
             var preDict = new Dictionary<string, string>();
+
+            if (!File.Exists(voiceDir + "resp.json"))
+            {
+                Console.WriteLine("---------------");
+                Console.ForegroundColor = ConsoleColor.DarkRed;
+                if (!File.Exists(voiceDir + "resp.json")) Console.WriteLine("The RESP.json configuration file is missing. ");
+                return;
+            }
 
             if (File.Exists(voiceDir + "prefix.map"))
             {
@@ -66,6 +73,9 @@ namespace RespP
                 Console.WriteLine(e);
             }
 
+            var cfgDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(voiceDir + "resp.json"));
+            var url = cfgDict["source"];
+
             Parallel.ForEach(ustData.Sections, itemSection =>
             {
                 if (!itemSection.Keys.ContainsKey("NoteNum")) return;
@@ -82,36 +92,13 @@ namespace RespP
                     Console.WriteLine(
                         $"{lyric} : {path} : {File.Exists(path)} {(targetValue.root ? " *" : string.Empty)}");
                     if (File.Exists(path)) return;
-                    lock (respDict)
-                        //Fix Here 
-                        if (!respDict.ContainsKey((targetValue.name, targetValue.dir)))
-                            respDict.Add((targetValue.name, targetValue.dir), (targetValue.dir, targetValue.root));
+                    var uname = !targetValue.root ? targetValue.dir.Name + "\\" + targetValue.name : targetValue.name;
+                    Download(url + uname, targetValue.dir.FullName + "\\" + targetValue.name);
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine(e);
                 }
-            });
-
-            if (!File.Exists(voiceDir + "resp.json") || respDict.Count == 0)
-            {
-                Console.WriteLine("---------------");
-                Console.ForegroundColor = ConsoleColor.DarkRed;
-                if (!File.Exists(voiceDir + "resp.json")) Console.WriteLine("The RESP.json configuration file is missing. ");
-                Console.ForegroundColor = ConsoleColor.Green;
-                if (respDict.Count == 0) Console.WriteLine("Files are all synced.");
-                Console.ReadLine();
-                return;
-            }
-
-            var cfgDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(voiceDir + "resp.json"));
-            var url = cfgDict["source"];
-
-            Parallel.ForEach(respDict, i =>
-            {
-                var uname = !i.Value.root ? i.Value.dir.Name + "\\" + i.Key.name : i.Key.name;
-                Download(url + uname,
-                    i.Value.dir.FullName + "\\" + i.Key.name);
             });
 
             Console.WriteLine("---------------");
