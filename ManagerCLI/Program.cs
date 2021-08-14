@@ -29,8 +29,8 @@ namespace RespP
                 File.ReadAllText(AppDomain.CurrentDomain.BaseDirectory + "\\" + "prefix.ini"));
             var ustData = new FileIniDataParser().Parser.Parse(File.ReadAllText(args.FirstOrDefault(), Encoding.Default)
                 .Replace("[#VERSION]\r\n" + "UST Version 1.20\r\n", ""));
-            ustData.Sections.RemoveSection("#PREV");
-            ustData.Sections.RemoveSection("#NEXT");
+            //ustData.Sections.RemoveSection("#PREV");
+            //ustData.Sections.RemoveSection("#NEXT");
 
             var voiceDir = ustData.Sections["#SETTING"]["VoiceDir"].TrimEnd('\\') + "\\";
             var respDict = new Dictionary<(string name, DirectoryInfo dir),(DirectoryInfo dir, bool root)>();
