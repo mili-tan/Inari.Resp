@@ -16,30 +16,27 @@ namespace Inari.Resp
         static void Main(string[] args)
         {
             var resname = "resampler.exe";
-            if (string.Join(" ", args).Contains("@"))
-            {
-                var argsList = string.Join(" ", args).Split('@').ToList();
-                if (argsList.Count != 0) argsList.Remove(argsList.FirstOrDefault());
-                if (argsList.Count != 0) argsList.Remove(argsList.LastOrDefault());
-                if (argsList.Count == 1)
-                {
-                    Console.WriteLine("Resampler : " + argsList.First().Replace("/", ""));
-                    resname = argsList.First().Replace("/", "");
-                    if (resname == "resp.exe")
-                    {
-                        Console.WriteLine("R U kidding me? RESP is NOT a REAL Resampler.");
-                        resname = "resampler.exe";
-                    }
-                }
-            }
-
+            var argStr = string.Join(" ", args).Replace("/", "");
             if (args.Length == 0)
             {
                 NoRes();
                 return;
             }
 
-            Console.WriteLine("CommandLine:" + Interaction.Command());
+            if (argStr.Contains("@"))
+            {
+                var argsList = argStr.Split('@').ToList();
+                if (argsList.Count != 0) argsList.Remove(argsList.FirstOrDefault());
+                if (argsList.Count != 0) argsList.Remove(argsList.LastOrDefault());
+                if (argsList.Count == 1)
+                {
+                    Console.WriteLine("Resampler : " + argsList.First());
+                    if (resname == "resp.exe") Console.WriteLine("R U kidding me? RESP is NOT a REAL Resampler.");
+                    else resname = argsList.First();
+                }
+            }
+            if (argStr.Contains("#CMD#")) Console.WriteLine("CommandLine:" + Interaction.Command());
+
             Console.WriteLine("-----------INARI.RESP v1.0 RC-----------");
 
             var fileInfo = new FileInfo(args.FirstOrDefault());
@@ -128,7 +125,23 @@ namespace Inari.Resp
 
                 ProcessRes(res, Interaction.Command(), consoleColor);
 
-                if (File.Exists(fileInfo.FullName + ".noupdate") ||
+                if (argStr.Contains("#DEL-WAV#") || File.Exists(fileInfo.FullName + ".delwav") ||
+                    File.Exists(fileInfo.Directory.FullName + @"\resp.delwav"))
+                {
+                    Console.ForegroundColor = ConsoleColor.Cyan;
+                    File.Delete(fileInfo.FullName);
+                    File.Delete(fileInfo.FullName + ".frq");
+                    File.Delete(fileInfo.FullName + ".frc");
+                    File.Delete(fileInfo.FullName + ".pmk");
+                    File.Delete(fileInfo.FullName + ".dio");
+                    File.Delete(fileInfo.FullName + ".vs4ufrq");
+                    File.Delete(fileInfo.FullName + ".llsm");
+                    Console.WriteLine("Delete Wav:" + fileName);
+                    Console.ForegroundColor = consoleColor;
+                    return;
+                }
+
+                if (argStr.Contains("#NO-UPDATE#") || File.Exists(fileInfo.FullName + ".noupdate") ||
                     File.Exists(fileInfo.Directory.FullName + @"\resp.noupdate"))
                 {
                     Console.ForegroundColor = ConsoleColor.Cyan;
