@@ -28,7 +28,7 @@ namespace Inari.Resp
                 var argsList = argStr.Split('@').ToList();
                 if (argsList.Count != 0) argsList.Remove(argsList.FirstOrDefault());
                 if (argsList.Count != 0) argsList.Remove(argsList.LastOrDefault());
-                if (argsList.Count == 1)
+                if (argsList.Count != 0)
                 {
                     Console.WriteLine("Resampler : " + argsList.First());
                     if (resname == "resp.exe") Console.WriteLine("R U kidding me? RESP is NOT a REAL Resampler.");
