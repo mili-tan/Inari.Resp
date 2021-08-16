@@ -15,6 +15,24 @@ namespace Inari.Resp
     {
         static void Main(string[] args)
         {
+            var resname = "resampler.exe";
+            if (string.Join(" ", args).Contains("@"))
+            {
+                var argsList = string.Join(" ", args).Split('@').ToList();
+                if (argsList.Count != 0) argsList.Remove(argsList.FirstOrDefault());
+                if (argsList.Count != 0) argsList.Remove(argsList.LastOrDefault());
+                if (argsList.Count == 1)
+                {
+                    Console.WriteLine("Resampler : " + argsList.First().Replace("/", ""));
+                    resname = argsList.First().Replace("/", "");
+                    if (resname == "resp.exe")
+                    {
+                        Console.WriteLine("R U kidding me? RESP is NOT a REAL Resampler.");
+                        resname = "resampler.exe";
+                    }
+                }
+            }
+
             if (args.Length == 0)
             {
                 NoRes();
@@ -55,7 +73,7 @@ namespace Inari.Resp
             var respPath = voicePath + @"\resp.json";
             var hashPath = voicePath + @"\resp.hash";
             var fileName = fileInfo.FullName.Split(voiceName).Last().TrimStart('\\');
-            var res = AppDomain.CurrentDomain.BaseDirectory + "resampler.exe";
+            var res = AppDomain.CurrentDomain.BaseDirectory + resname;
 
             if (!File.Exists(respPath) && !fileInfo.Directory.FullName.Contains(@"\voice\"))
             {
@@ -75,7 +93,7 @@ namespace Inari.Resp
                 var respDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(respPath));
                 var timeout = respDict.TryGetValue("timeout", out var timeValue) ? Convert.ToInt32(timeValue) : 5000;
                 var url = respDict["source"].TrimEnd('/').TrimEnd('\\') + "/";
-                res = respDict["resampler"];
+                res = resname == "resampler.exe" ? respDict["resampler"] : resname;
 
                 if (!res.Contains('/') && !res.Contains('\\'))
                     res = File.Exists(utauPath + '\\' + res)
@@ -90,7 +108,7 @@ namespace Inari.Resp
                     if (!File.Exists(res))
                     {
                         Console.WriteLine("Resampler NotFound:" + res);
-                        res = fileInfo.Directory.FullName.Split("voice").First() + @"\resampler.exe";
+                        res = fileInfo.Directory.FullName.Split("voice").First() + "resampler.exe";
                     }
                     if (!File.Exists(res)) Console.WriteLine("Resampler NotFound:" + res);
                 }
