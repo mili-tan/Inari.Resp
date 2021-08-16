@@ -22,7 +22,7 @@ namespace Inari.Resp
             }
 
             Console.WriteLine("CommandLine:" + Interaction.Command());
-            Console.WriteLine("------------INARI.RESP v0.13------------");
+            Console.WriteLine("-----------INARI.RESP v1.0 RC-----------");
 
             var fileInfo = new FileInfo(args.FirstOrDefault());
             var consoleColor = Console.ForegroundColor;

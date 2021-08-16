@@ -32,8 +32,6 @@ namespace Inari.Resp.Plugin
                 File.ReadAllText(AppDomain.CurrentDomain.BaseDirectory + "\\" + "prefix.ini"));
             var ustData = new FileIniDataParser().Parser.Parse(File.ReadAllText(args.FirstOrDefault(), Encoding.Default)
                 .Replace("[#VERSION]\r\n" + "UST Version 1.20\r\n", ""));
-            //ustData.Sections.RemoveSection("#PREV");
-            //ustData.Sections.RemoveSection("#NEXT");
 
             var voiceDir = ustData.Sections["#SETTING"]["VoiceDir"].TrimEnd('\\') + "\\";
             var respDict = new Dictionary<(string name, DirectoryInfo dir),(DirectoryInfo dir, bool root)>();
@@ -107,7 +105,7 @@ namespace Inari.Resp.Plugin
                     Console.WriteLine(
                         $"{lyric} : {path} : {File.Exists(path)} {(targetValue.root ? " *" : string.Empty)}");
 
-                    if (File.Exists(path) && hashDict.Values.Contains(Convert.ToBase64String(
+                    if (File.Exists(path) && !hashDict.Values.Contains(Convert.ToBase64String(
                         new SHA1CryptoServiceProvider().ComputeHash(File.ReadAllBytes(path)))))
                     {
                         Console.ForegroundColor = ConsoleColor.Yellow;
@@ -131,6 +129,8 @@ namespace Inari.Resp.Plugin
                             Download(!targetValue.root ? url + targetValue.dir.Name + @"\oto.ini" : url + @"\oto.ini",
                                 targetValue.dir.FullName + @"\oto.ini");
                         }
+
+                        Console.ForegroundColor = ConsoleSColor;
                     }
                     if (File.Exists(path)) continue;
                     if (!respDict.ContainsKey((targetValue.name, targetValue.dir)))
