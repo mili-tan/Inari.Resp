@@ -74,7 +74,7 @@ namespace Inari.Resp
             {
                 var respDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(respPath));
                 var timeout = respDict.TryGetValue("timeout", out var timeValue) ? Convert.ToInt32(timeValue) : 5000;
-                var url = respDict["source"];
+                var url = respDict["source"].TrimEnd('/').TrimEnd('\\') + "/";
                 res = respDict["resampler"];
 
                 if (!res.Contains('/') && !res.Contains('\\'))

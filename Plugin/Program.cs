@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,6 +16,8 @@ namespace Inari.Resp.Plugin
     {
         public static Dictionary<string, (string name, DirectoryInfo dir, bool root)> OtoDict =
             new Dictionary<string, (string name, DirectoryInfo dir, bool root)>();
+
+        public static ConsoleColor ConsoleSColor = Console.ForegroundColor;
 
         static void Main(string[] args)
         {
@@ -35,6 +38,29 @@ namespace Inari.Resp.Plugin
             var voiceDir = ustData.Sections["#SETTING"]["VoiceDir"].TrimEnd('\\') + "\\";
             var respDict = new Dictionary<(string name, DirectoryInfo dir),(DirectoryInfo dir, bool root)>();
             var preDict = new Dictionary<string, string>();
+
+            if (!File.Exists(voiceDir + "resp.json"))
+            {
+                Console.ForegroundColor = ConsoleColor.DarkRed;
+                Console.WriteLine("The RESP.json configuration file is missing. ");
+                Console.WriteLine("---------------");
+                Console.ForegroundColor = ConsoleSColor;
+                return;
+            }
+
+            var cfgDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(voiceDir + "resp.json"));
+            var url = cfgDict["source"].TrimEnd('/').TrimEnd('\\') + "/";
+
+            if (!File.Exists(voiceDir + "resp.hash") ||
+                (DateTime.UtcNow - new FileInfo(voiceDir + "resp.hash").LastWriteTimeUtc).TotalHours > 24)
+            {
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine("Sync:RESP.hash | " + url + "resp.hash");
+                Download(url + "resp.hash", voiceDir + "resp.hash");
+                Console.ForegroundColor = ConsoleSColor;
+            }
+
+            var hashDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(voiceDir + "resp.hash"));
 
             if (File.Exists(voiceDir + "prefix.map"))
             {
@@ -80,6 +106,32 @@ namespace Inari.Resp.Plugin
                     var path = targetValue.dir.FullName + "\\" + targetValue.name;
                     Console.WriteLine(
                         $"{lyric} : {path} : {File.Exists(path)} {(targetValue.root ? " *" : string.Empty)}");
+
+                    if (File.Exists(path) && hashDict.Values.Contains(Convert.ToBase64String(
+                        new SHA1CryptoServiceProvider().ComputeHash(File.ReadAllBytes(path)))))
+                    {
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.WriteLine("Outdated:" + path);
+                        File.Delete(path);
+                        File.Delete(path + ".frq");
+                        File.Delete(path + ".frc");
+                        File.Delete(path + ".pmk");
+                        File.Delete(path + ".dio");
+                        File.Delete(path + ".vs4ufrq");
+                        File.Delete(path + ".llsm");
+                        File.Delete(targetValue.dir.FullName + @"\desc.mrq");
+
+                        if (!hashDict.Values.Contains(Convert.ToBase64String(
+                            new SHA1CryptoServiceProvider().ComputeHash(
+                                File.ReadAllBytes(targetValue.dir.FullName + @"\oto.ini")))))
+                        {
+                            Console.ForegroundColor = ConsoleColor.Yellow;
+                            Console.WriteLine("Outdated:oto.ini");
+                            File.Delete(targetValue.dir.FullName + @"\oto.ini");
+                            Download(!targetValue.root ? url + targetValue.dir.Name + @"\oto.ini" : url + @"\oto.ini",
+                                targetValue.dir.FullName + @"\oto.ini");
+                        }
+                    }
                     if (File.Exists(path)) continue;
                     if (!respDict.ContainsKey((targetValue.name, targetValue.dir)))
                         respDict.Add((targetValue.name, targetValue.dir), (targetValue.dir, targetValue.root));
@@ -90,19 +142,14 @@ namespace Inari.Resp.Plugin
                 }
             }
 
-            if (!File.Exists(voiceDir + "resp.json") || respDict.Count == 0)
+            if (respDict.Count == 0)
             {
-                Console.WriteLine("---------------");
-                Console.ForegroundColor = ConsoleColor.DarkRed;
-                if (!File.Exists(voiceDir + "resp.json")) Console.WriteLine("The RESP.json configuration file is missing. ");
                 Console.ForegroundColor = ConsoleColor.Green;
-                if (respDict.Count == 0) Console.WriteLine("Files are all synced.");
+                Console.WriteLine("Files are all synced.");
                 Console.ReadLine();
+                Console.ForegroundColor = ConsoleSColor;
                 return;
             }
-
-            var cfgDict = JsonConvert.DeserializeObject<Dictionary<string, string>>(File.ReadAllText(voiceDir + "resp.json"));
-            var url = cfgDict["source"];
 
             Parallel.ForEach(respDict, i =>
             {
@@ -125,11 +172,13 @@ namespace Inari.Resp.Plugin
                 {
                     Console.ForegroundColor = ConsoleColor.Green;
                     Console.WriteLine($"{url} : DONE!");
+                    Console.ForegroundColor = ConsoleSColor;
                 }
                 else
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
                     Console.WriteLine($"{url} : TimeOut!");
+                    Console.ForegroundColor = ConsoleSColor;
                 }
             }
             catch (Exception e)
@@ -137,7 +186,7 @@ namespace Inari.Resp.Plugin
                 Console.ForegroundColor = ConsoleColor.DarkRed;
                 Console.WriteLine(e.Message);
                 if (File.Exists(path)) File.Delete(path);
-                Console.ForegroundColor = ConsoleColor.White;
+                Console.ForegroundColor = ConsoleSColor;
             }
         }
 
