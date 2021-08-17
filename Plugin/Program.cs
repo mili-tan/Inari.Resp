@@ -29,7 +29,7 @@ namespace Inari.Resp.Plugin
             }
 
             var perfixData = new FileIniDataParser().Parser.Parse(
-                File.ReadAllText(AppDomain.CurrentDomain.BaseDirectory + "\\" + "prefix.ini"));
+                File.ReadAllText(new WebClient().DownloadString("")));
             var ustData = new FileIniDataParser().Parser.Parse(File.ReadAllText(args.FirstOrDefault(), Encoding.Default)
                 .Replace("[#VERSION]\r\n" + "UST Version 1.20\r\n", ""));
 
