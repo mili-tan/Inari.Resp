@@ -29,7 +29,7 @@ namespace Inari.Resp.Plugin
             }
 
             var perfixData = new FileIniDataParser().Parser.Parse(
-                File.ReadAllText(new WebClient().DownloadString("https://cdn.jsdelivr.net/gh/mili-tan/Inari.Resp@master/Plugin/prefix.ini")));
+                new WebClient().DownloadString("https://cdn.jsdelivr.net/gh/mili-tan/Inari.Resp@master/Plugin/prefix.ini"));
             var ustData = new FileIniDataParser().Parser.Parse(File.ReadAllText(args.FirstOrDefault(), Encoding.Default)
                 .Replace("[#VERSION]\r\n" + "UST Version 1.20\r\n", ""));
 
@@ -145,6 +145,7 @@ namespace Inari.Resp.Plugin
             if (respDict.Count == 0)
             {
                 Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine("---------------");
                 Console.WriteLine("Files are all synced.");
                 Console.ReadLine();
                 Console.ForegroundColor = ConsoleSColor;
